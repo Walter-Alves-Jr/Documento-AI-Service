@@ -1,0 +1,31 @@
+# Build results
+bin/
+obj/
+*.dll
+*.exe
+*.pdb
+
+# IDE
+.vscode/
+.idea/
+*.sln.iml
+
+# Dependencies
+node_modules/
+packages/
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+/tmp/
+.DS_Store
+
+# Environment
+.env
+.env.local
+
+# OCR temp files
+/tmp/ocr_*
+/tmp/pdf_*

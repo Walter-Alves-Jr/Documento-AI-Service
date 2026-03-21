@@ -1,0 +1,6 @@
+@DocumentAIService_HostAddress = http://localhost:5199
+
+GET {{DocumentAIService_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
