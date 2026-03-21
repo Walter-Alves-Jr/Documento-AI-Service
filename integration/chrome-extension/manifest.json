@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "Document AI - B3agro Trizy",
+  "version": "1.0.0",
+  "description": "Validação automática de documentos de motoristas via OCR e IA. Preenche datas de validade automaticamente ao fazer upload de CNH, ASO e Direção Defensiva.",
+  "icons": {
+    "16":  "icon.png",
+    "48":  "icon.png",
+    "128": "icon.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://brf-homolog.yms.trizy.com.br/Motorista/*",
+        "*://*.yms.trizy.com.br/Motorista/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "permissions": [],
+  "host_permissions": [
+    "*://brf-homolog.yms.trizy.com.br/*",
+    "*://*.yms.trizy.com.br/*",
+    "https://5000-iomtdl8xard50urtz3x4o-2fab9d3c.us2.manus.computer/*"
+  ]
+}
