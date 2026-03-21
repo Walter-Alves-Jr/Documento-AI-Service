@@ -3,622 +3,348 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document AI Service - Validação de Documentos</title>
+    <title>Document AI Service</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-
-        .container {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            max-width: 900px;
-            width: 100%;
-            overflow: hidden;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 40px 20px;
-            text-align: center;
-        }
-
-        .header h1 {
-            font-size: 2em;
-            margin-bottom: 10px;
-        }
-
-        .header p {
-            opacity: 0.9;
-            font-size: 1.1em;
-        }
-
-        .content {
-            padding: 40px;
-        }
-
-        .form-group {
-            margin-bottom: 25px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #333;
-        }
-
-        select, input[type="file"] {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 6px;
-            font-size: 1em;
-            transition: border-color 0.3s;
-        }
-
-        select:focus, input[type="file"]:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        .file-input-wrapper {
-            position: relative;
-            overflow: hidden;
-            display: inline-block;
-            width: 100%;
-        }
-
-        .file-input-label {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 30px;
-            border: 2px dashed #667eea;
-            border-radius: 6px;
-            background: #f8f9ff;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .file-input-label:hover {
-            background: #f0f2ff;
-            border-color: #764ba2;
-        }
-
-        .file-input-label.dragover {
-            background: #e8ebff;
-            border-color: #764ba2;
-        }
-
-        .file-input-label svg {
-            width: 40px;
-            height: 40px;
-            margin-right: 15px;
-            color: #667eea;
-        }
-
-        .file-input-text {
-            text-align: left;
-        }
-
-        .file-input-text p {
-            margin: 0;
-            color: #666;
-        }
-
-        .file-input-text .main {
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 5px;
-        }
-
-        #fileInput {
-            display: none;
-        }
-
-        .file-preview {
-            margin-top: 15px;
-            padding: 15px;
-            background: #f5f5f5;
-            border-radius: 6px;
-            display: none;
-        }
-
-        .file-preview.show {
-            display: block;
-        }
-
-        .file-preview img {
-            max-width: 100%;
-            max-height: 300px;
-            border-radius: 4px;
-        }
-
-        .button-group {
-            display: flex;
-            gap: 15px;
-            margin-top: 30px;
-        }
-
-        button {
-            flex: 1;
-            padding: 14px 28px;
-            border: none;
-            border-radius: 6px;
-            font-size: 1.05em;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .btn-validate {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .btn-validate:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
-        }
-
-        .btn-validate:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .btn-clear {
-            background: #f0f0f0;
-            color: #333;
-        }
-
-        .btn-clear:hover {
-            background: #e0e0e0;
-        }
-
-        .results {
-            margin-top: 40px;
-            display: none;
-        }
-
-        .results.show {
-            display: block;
-        }
-
-        .result-card {
-            padding: 25px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-
-        .result-card.approved {
-            background: #e8f5e9;
-            border-left: 5px solid #4caf50;
-        }
-
-        .result-card.manual {
-            background: #fff3e0;
-            border-left: 5px solid #ff9800;
-        }
-
-        .result-card.rejected {
-            background: #ffebee;
-            border-left: 5px solid #f44336;
-        }
-
-        .result-status {
-            font-size: 1.8em;
-            font-weight: 700;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .result-card.approved .result-status {
-            color: #2e7d32;
-        }
-
-        .result-card.manual .result-status {
-            color: #e65100;
-        }
-
-        .result-card.rejected .result-status {
-            color: #c62828;
-        }
-
-        .confidence-bar {
-            margin: 20px 0;
-        }
-
-        .confidence-label {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #333;
-        }
-
-        .bar {
-            width: 100%;
-            height: 30px;
-            background: #e0e0e0;
-            border-radius: 15px;
-            overflow: hidden;
-        }
-
-        .bar-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 600;
-            font-size: 0.9em;
-            transition: width 0.5s ease;
-        }
-
-        .motivos {
-            margin-top: 20px;
-        }
-
-        .motivos h4 {
-            margin-bottom: 12px;
-            color: #333;
-            font-size: 1.05em;
-        }
-
-        .motivos ul {
-            list-style: none;
-        }
-
-        .motivos li {
-            padding: 8px 0;
-            color: #555;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-        }
-
-        .motivos li:last-child {
-            border-bottom: none;
-        }
-
-        .dados-extraidos {
-            margin-top: 20px;
-            padding: 15px;
-            background: rgba(0, 0, 0, 0.03);
-            border-radius: 6px;
-        }
-
-        .dados-extraidos h4 {
-            margin-bottom: 12px;
-            color: #333;
-            font-size: 1.05em;
-        }
-
-        .dados-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-        }
-
-        .dados-item:last-child {
-            border-bottom: none;
-        }
-
-        .dados-label {
-            font-weight: 600;
-            color: #666;
-        }
-
-        .dados-value {
-            color: #333;
-            word-break: break-all;
-        }
-
-        .loading {
-            display: none;
-            text-align: center;
-            padding: 30px;
-        }
-
-        .loading.show {
-            display: block;
-        }
-
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 15px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .error {
-            background: #ffebee;
-            border-left: 5px solid #f44336;
-            padding: 20px;
-            border-radius: 6px;
-            color: #c62828;
-            margin-top: 20px;
-            display: none;
-        }
-
-        .error.show {
-            display: block;
-        }
-
-        @media (max-width: 600px) {
-            .header h1 {
-                font-size: 1.5em;
-            }
-
-            .content {
-                padding: 20px;
-            }
-
-            .button-group {
-                flex-direction: column;
-            }
-
-            .file-input-label {
-                flex-direction: column;
-                text-align: center;
-            }
-
-            .file-input-label svg {
-                margin-right: 0;
-                margin-bottom: 10px;
-            }
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; color: #333; }
+        header { background: linear-gradient(135deg, #1a1a2e, #16213e); color: white; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
+        header h1 { font-size: 1.4rem; font-weight: 600; }
+        header span { font-size: 0.8rem; opacity: 0.7; }
+        nav { background: white; border-bottom: 1px solid #e0e0e0; display: flex; padding: 0 32px; }
+        nav button { background: none; border: none; padding: 14px 20px; cursor: pointer; font-size: 0.9rem; color: #666; border-bottom: 3px solid transparent; transition: all 0.2s; }
+        nav button.active { color: #4f46e5; border-bottom-color: #4f46e5; font-weight: 600; }
+        nav button:hover { color: #4f46e5; }
+        .container { max-width: 900px; margin: 32px auto; padding: 0 16px; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .card { background: white; border-radius: 12px; padding: 28px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .card h2 { font-size: 1.1rem; margin-bottom: 20px; color: #1a1a2e; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+        label { display: block; font-size: 0.85rem; font-weight: 600; color: #555; margin-bottom: 6px; }
+        select, input[type=text] { width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem; outline: none; transition: border-color 0.2s; }
+        select:focus, input[type=text]:focus { border-color: #4f46e5; }
+        .upload-area { border: 2px dashed #c7d2fe; border-radius: 10px; padding: 32px; text-align: center; cursor: pointer; transition: all 0.2s; background: #f8f7ff; margin-bottom: 16px; }
+        .upload-area:hover, .upload-area.dragover { border-color: #4f46e5; background: #eef2ff; }
+        .upload-icon { font-size: 2.5rem; margin-bottom: 8px; }
+        .upload-area p { color: #666; font-size: 0.9rem; }
+        .upload-area strong { color: #4f46e5; }
+        #fileInput { display: none; }
+        #preview { max-width: 100%; max-height: 200px; border-radius: 8px; margin-top: 12px; display: none; }
+        .btn-primary { background: linear-gradient(135deg, #4f46e5, #7c3aed); color: white; border: none; padding: 12px 28px; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; width: 100%; transition: opacity 0.2s; }
+        .btn-primary:hover { opacity: 0.9; }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .result-card { border-radius: 12px; padding: 24px; margin-top: 20px; display: none; animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+        .result-card.aprovado { background: #f0fdf4; border: 1px solid #86efac; }
+        .result-card.manual { background: #fffbeb; border: 1px solid #fcd34d; }
+        .result-card.reprovado { background: #fef2f2; border: 1px solid #fca5a5; }
+        .status-badge { display: inline-flex; align-items: center; gap: 8px; font-size: 1.4rem; font-weight: 700; margin-bottom: 16px; }
+        .aprovado .status-badge { color: #16a34a; }
+        .manual .status-badge { color: #d97706; }
+        .reprovado .status-badge { color: #dc2626; }
+        .conf-wrap { margin-bottom: 20px; }
+        .conf-label { display: flex; justify-content: space-between; font-size: 0.85rem; color: #666; margin-bottom: 6px; }
+        .conf-bar { height: 10px; background: #e5e7eb; border-radius: 99px; overflow: hidden; }
+        .conf-fill { height: 100%; border-radius: 99px; transition: width 1s ease; }
+        .aprovado .conf-fill { background: #22c55e; }
+        .manual .conf-fill { background: #f59e0b; }
+        .reprovado .conf-fill { background: #ef4444; }
+        .dados-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px; }
+        .dado-item { background: rgba(255,255,255,0.7); border-radius: 8px; padding: 12px; }
+        .dado-lbl { font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 0.05em; }
+        .dado-val { font-size: 0.95rem; font-weight: 600; color: #1a1a2e; margin-top: 2px; }
+        .motivos h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 10px; color: #555; }
+        .motivos ul { list-style: none; }
+        .motivos li { font-size: 0.88rem; padding: 4px 0; color: #444; }
+        .cfg-section { margin-bottom: 28px; }
+        .cfg-section h3 { font-size: 1rem; font-weight: 600; color: #1a1a2e; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid #e5e7eb; }
+        .tag-list { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; min-height: 36px; }
+        .tag { display: inline-flex; align-items: center; gap: 6px; background: #eef2ff; color: #4f46e5; border-radius: 99px; padding: 4px 12px; font-size: 0.85rem; }
+        .tag button { background: none; border: none; cursor: pointer; color: #ef4444; font-size: 1rem; line-height: 1; }
+        .add-row { display: flex; gap: 8px; }
+        .add-row input { flex: 1; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem; outline: none; }
+        .add-row input:focus { border-color: #4f46e5; }
+        .btn-add { background: #4f46e5; color: white; border: none; padding: 10px 18px; border-radius: 8px; font-size: 0.88rem; cursor: pointer; white-space: nowrap; }
+        .btn-add:hover { background: #4338ca; }
+        .horas-row { display: flex; align-items: center; gap: 12px; }
+        .horas-row input[type=number] { width: 100px; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem; outline: none; }
+        .toast { position: fixed; bottom: 24px; right: 24px; background: #1a1a2e; color: white; padding: 12px 20px; border-radius: 8px; font-size: 0.9rem; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 9999; }
+        .toast.show { opacity: 1; }
+        .loading { display: none; text-align: center; padding: 24px; color: #666; }
+        .spinner { width: 36px; height: 36px; border: 3px solid #e5e7eb; border-top-color: #4f46e5; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>📄 Document AI Service</h1>
-            <p>Validação Automática de Documentos com OCR</p>
-        </div>
-
-        <div class="content">
-            <form id="validationForm">
-                <div class="form-group">
-                    <label for="tipoDocumento">Tipo de Documento:</label>
-                    <select id="tipoDocumento" required>
-                        <option value="">Selecione um tipo...</option>
-                        <option value="CNH">CNH - Carteira Nacional de Habilitação</option>
-                        <option value="RG">RG - Registro Geral</option>
-                        <option value="CPF">CPF - Cadastro de Pessoa Física</option>
-                        <option value="ASO">ASO - Atestado de Saúde Ocupacional</option>
+<header>
+    <h1>🤖 Document AI Service</h1>
+    <span>v2.0 — Validação Inteligente de Documentos</span>
+</header>
+<nav>
+    <button class="active" onclick="switchTab('validacao', this)">📄 Validação</button>
+    <button onclick="switchTab('config', this)">⚙️ Configurações</button>
+</nav>
+<div class="container">
+    <!-- TAB VALIDAÇÃO -->
+    <div id="tab-validacao" class="tab-content active">
+        <div class="card">
+            <h2>Validar Documento</h2>
+            <div class="form-row">
+                <div>
+                    <label>Tipo de Documento</label>
+                    <select id="tipoDocumento">
+                        <option value="CNH">CNH — Carteira Nacional de Habilitação</option>
+                        <option value="ASO">ASO — Atestado de Saúde Ocupacional</option>
+                        <option value="DIRECAO_DEFENSIVA">Direção Defensiva / Preventiva</option>
+                        <option value="RG">RG — Registro Geral</option>
+                        <option value="CPF">CPF</option>
                         <option value="PASSAPORTE">Passaporte</option>
-                        <option value="OUTRO">Outro</option>
                     </select>
                 </div>
-
-                <div class="form-group">
-                    <label>Selecione a Imagem do Documento:</label>
-                    <div class="file-input-wrapper">
-                        <label for="fileInput" class="file-input-label" id="dropZone">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                            </svg>
-                            <div class="file-input-text">
-                                <p class="main">Clique ou arraste a imagem aqui</p>
-                                <p>Formatos suportados: JPG, PNG, PDF (máximo 5MB)</p>
-                            </div>
-                        </label>
-                        <input type="file" id="fileInput" accept="image/*,.pdf" required>
-                    </div>
-                    <div class="file-preview" id="filePreview"></div>
+                <div>
+                    <label>Arquivo (PDF ou Imagem)</label>
+                    <input type="text" id="fileName" placeholder="Nenhum arquivo selecionado" readonly onclick="document.getElementById('fileInput').click()" style="cursor:pointer">
                 </div>
-
-                <div class="button-group">
-                    <button type="submit" class="btn-validate">Validar Documento</button>
-                    <button type="reset" class="btn-clear">Limpar</button>
-                </div>
-            </form>
-
-            <div class="loading" id="loading">
-                <div class="spinner"></div>
-                <p>Processando documento...</p>
             </div>
-
-            <div class="error" id="error"></div>
-
-            <div class="results" id="results">
-                <div class="result-card" id="resultCard">
-                    <div class="result-status" id="resultStatus"></div>
-
-                    <div class="confidence-bar">
-                        <div class="confidence-label">
-                            <span>Nível de Confiança:</span>
-                            <span id="confidenceValue">0%</span>
-                        </div>
-                        <div class="bar">
-                            <div class="bar-fill" id="barFill" style="width: 0%"></div>
-                        </div>
-                    </div>
-
-                    <div class="dados-extraidos" id="dadosExtraidos"></div>
-
-                    <div class="motivos">
-                        <h4>Motivos da Decisão:</h4>
-                        <ul id="motivosList"></ul>
-                    </div>
+            <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+                <div class="upload-icon">📂</div>
+                <p>Arraste o arquivo aqui ou <strong>clique para selecionar</strong></p>
+                <p style="font-size:0.8rem;margin-top:4px;color:#999">Suporta PDF, PNG, JPG, JPEG (máx. 10MB)</p>
+                <img id="preview" alt="Preview">
+            </div>
+            <input type="file" id="fileInput" accept=".pdf,.png,.jpg,.jpeg">
+            <button class="btn-primary" id="btnValidar" onclick="validarDocumento()">🔍 Validar Documento</button>
+        </div>
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Processando documento com OCR...</p>
+        </div>
+        <div class="result-card" id="resultCard">
+            <div class="status-badge" id="statusBadge"></div>
+            <div class="conf-wrap">
+                <div class="conf-label">
+                    <span>Nível de Confiança</span>
+                    <span id="confValue">0%</span>
+                </div>
+                <div class="conf-bar"><div class="conf-fill" id="confFill" style="width:0%"></div></div>
+            </div>
+            <div class="dados-grid" id="dadosGrid"></div>
+            <div class="motivos">
+                <h4>Motivos da Decisão:</h4>
+                <ul id="motivosList"></ul>
+            </div>
+        </div>
+    </div>
+    <!-- TAB CONFIGURAÇÕES -->
+    <div id="tab-config" class="tab-content">
+        <div class="card">
+            <h2>⚙️ Configurações — Direção Defensiva</h2>
+            <div class="cfg-section">
+                <h3>🏫 Escolas Aprovadas</h3>
+                <p style="font-size:0.85rem;color:#666;margin-bottom:12px">Documentos emitidos por escolas não listadas serão <strong>reprovados automaticamente</strong>.</p>
+                <div class="tag-list" id="escolaList"></div>
+                <div class="add-row">
+                    <input type="text" id="novaEscola" placeholder="Nome da escola ou instituição...">
+                    <button class="btn-add" onclick="adicionarEscola()">+ Adicionar</button>
+                </div>
+            </div>
+            <div class="cfg-section">
+                <h3>⏱️ Carga Horária Mínima</h3>
+                <p style="font-size:0.85rem;color:#666;margin-bottom:12px">Certificados com carga horária inferior serão reprovados.</p>
+                <div class="horas-row">
+                    <input type="number" id="cargaHoraria" min="1" max="200" value="8">
+                    <span style="color:#666;font-size:0.9rem">horas mínimas</span>
+                    <button class="btn-add" onclick="salvarCargaHoraria()">Salvar</button>
+                </div>
+            </div>
+            <div class="cfg-section">
+                <h3>📋 Cursos Aceitos</h3>
+                <div class="tag-list" id="cursoList"></div>
+                <div class="add-row">
+                    <input type="text" id="novoCurso" placeholder="Nome do curso aceito...">
+                    <button class="btn-add" onclick="adicionarCurso()">+ Adicionar</button>
                 </div>
             </div>
         </div>
     </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+var API = '';
 
-    <script>
-        const form = document.getElementById('validationForm');
-        const fileInput = document.getElementById('fileInput');
-        const dropZone = document.getElementById('dropZone');
-        const filePreview = document.getElementById('filePreview');
-        const loading = document.getElementById('loading');
-        const error = document.getElementById('error');
-        const results = document.getElementById('results');
-        const resultCard = document.getElementById('resultCard');
+function switchTab(tab, btn) {
+    document.querySelectorAll('.tab-content').forEach(function(t) { t.classList.remove('active'); });
+    document.querySelectorAll('nav button').forEach(function(b) { b.classList.remove('active'); });
+    document.getElementById('tab-' + tab).classList.add('active');
+    btn.classList.add('active');
+    if (tab === 'config') loadConfig();
+}
 
-        // Drag and drop
-        dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZone.classList.add('dragover');
+var uploadArea = document.getElementById('uploadArea');
+var fileInput = document.getElementById('fileInput');
+
+uploadArea.addEventListener('dragover', function(e) { e.preventDefault(); uploadArea.classList.add('dragover'); });
+uploadArea.addEventListener('dragleave', function() { uploadArea.classList.remove('dragover'); });
+uploadArea.addEventListener('drop', function(e) {
+    e.preventDefault(); uploadArea.classList.remove('dragover');
+    if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', function() { if (fileInput.files[0]) handleFile(fileInput.files[0]); });
+
+function handleFile(file) {
+    document.getElementById('fileName').value = file.name;
+    var preview = document.getElementById('preview');
+    if (file.type.startsWith('image/')) {
+        var reader = new FileReader();
+        reader.onload = function(e) { preview.src = e.target.result; preview.style.display = 'block'; };
+        reader.readAsDataURL(file);
+    } else { preview.style.display = 'none'; }
+}
+
+function toBase64(file) {
+    return new Promise(function(resolve, reject) {
+        var r = new FileReader();
+        r.onload = function() { resolve(r.result.split(',')[1]); };
+        r.onerror = reject;
+        r.readAsDataURL(file);
+    });
+}
+
+async function validarDocumento() {
+    var file = fileInput.files[0];
+    if (!file) { showToast('Selecione um arquivo primeiro'); return; }
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('resultCard').style.display = 'none';
+    document.getElementById('btnValidar').disabled = true;
+    try {
+        var base64 = await toBase64(file);
+        var tipo = document.getElementById('tipoDocumento').value;
+        var res = await fetch(API + '/api/validation', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tipoDocumento: tipo, base64Arquivo: base64 })
         });
+        if (!res.ok) throw new Error('Erro na API: ' + res.status);
+        renderResult(await res.json());
+    } catch (err) { showToast('Erro: ' + err.message); }
+    finally {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('btnValidar').disabled = false;
+    }
+}
 
-        dropZone.addEventListener('dragleave', () => {
-            dropZone.classList.remove('dragover');
-        });
+function renderResult(data) {
+    var card = document.getElementById('resultCard');
+    var statusMap = { 'APROVADO': 'aprovado', 'ANALISE MANUAL': 'manual', 'REPROVADO': 'reprovado' };
+    var iconMap = { 'APROVADO': '✅', 'ANALISE MANUAL': '⚠️', 'REPROVADO': '❌' };
+    var st = data.status || 'REPROVADO';
+    var stKey = st.replace('Á', 'A').replace('É', 'E').replace('Ê', 'E');
+    var cls = statusMap[stKey] || 'reprovado';
+    var icon = iconMap[stKey] || '❌';
+    card.className = 'result-card ' + cls;
+    document.getElementById('statusBadge').innerHTML = icon + ' ' + st;
+    var conf = Math.round(data.confianca || 0);
+    document.getElementById('confValue').textContent = conf + '%';
+    setTimeout(function() { document.getElementById('confFill').style.width = conf + '%'; }, 100);
+    var grid = document.getElementById('dadosGrid');
+    grid.innerHTML = '';
+    var d = data.dadosExtraidos || {};
+    var campos = [
+        { label: 'Nome', value: d.nome },
+        { label: 'Validade', value: d.validade },
+        { label: 'Número / CPF', value: d.numeroDocumento },
+        { label: 'Resultado', value: d.resultado },
+        { label: 'Escola', value: d.escola },
+        { label: 'Curso', value: d.nomeCurso },
+        { label: 'Carga Horária', value: d.cargaHorariaHoras ? d.cargaHorariaHoras + 'h' : null },
+        { label: 'Período', value: (d.dataInicioCurso && d.dataFimCurso) ? (d.dataInicioCurso + ' a ' + d.dataFimCurso) : null },
+        { label: 'Data Realização', value: d.dataRealizacao },
+        { label: 'Médico', value: d.medico },
+        { label: 'Empresa', value: d.empresa }
+    ];
+    campos.filter(function(c) { return c.value; }).forEach(function(c) {
+        grid.innerHTML += '<div class="dado-item"><div class="dado-lbl">' + c.label + '</div><div class="dado-val">' + c.value + '</div></div>';
+    });
+    if (d.textoExtraido) {
+        grid.innerHTML += '<div class="dado-item" style="grid-column:1/-1"><div class="dado-lbl">Texto Extraído</div><div class="dado-val" style="font-size:0.8rem;font-weight:400;white-space:pre-wrap">' + d.textoExtraido + '</div></div>';
+    }
+    document.getElementById('motivosList').innerHTML = (data.motivos || []).map(function(m) { return '<li>' + m + '</li>'; }).join('');
+    card.style.display = 'block';
+}
 
-        dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('dragover');
-            fileInput.files = e.dataTransfer.files;
-            handleFileSelect();
-        });
+async function loadConfig() {
+    try {
+        var res = await fetch(API + '/api/validation/config/direcao-defensiva');
+        var config = await res.json();
+        renderEscolas(config.escolasAprovadas || []);
+        renderCursos(config.cursosAceitos || []);
+        document.getElementById('cargaHoraria').value = config.cargaHorariaMinimaHoras || 8;
+    } catch (e) { showToast('Erro ao carregar configurações'); }
+}
 
-        fileInput.addEventListener('change', handleFileSelect);
+function renderEscolas(lista) {
+    document.getElementById('escolaList').innerHTML = lista.map(function(e) {
+        return '<span class="tag">' + e + ' <button onclick="removerEscola(\'' + e.replace(/\'/g, "\\'") + '\')">x</button></span>';
+    }).join('');
+}
 
-        function handleFileSelect() {
-            const file = fileInput.files[0];
-            if (!file) return;
+function renderCursos(lista) {
+    document.getElementById('cursoList').innerHTML = lista.map(function(c) {
+        return '<span class="tag">' + c + ' <button onclick="removerCurso(\'' + c.replace(/\'/g, "\\'") + '\')">x</button></span>';
+    }).join('');
+}
 
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                filePreview.innerHTML = '';
-                if (file.type.startsWith('image/')) {
-                    const img = document.createElement('img');
-                    img.src = e.target.result;
-                    filePreview.appendChild(img);
-                } else {
-                    filePreview.innerHTML = `<p>📄 ${file.name}</p>`;
-                }
-                filePreview.classList.add('show');
-            };
-            reader.readAsDataURL(file);
-        }
+async function adicionarEscola() {
+    var val = document.getElementById('novaEscola').value.trim();
+    if (!val) return;
+    await fetch(API + '/api/validation/config/direcao-defensiva/escolas', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(val)
+    });
+    document.getElementById('novaEscola').value = '';
+    loadConfig(); showToast('Escola adicionada!');
+}
 
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
+async function removerEscola(escola) {
+    await fetch(API + '/api/validation/config/direcao-defensiva/escolas/' + encodeURIComponent(escola), { method: 'DELETE' });
+    loadConfig(); showToast('Escola removida');
+}
 
-            const tipoDocumento = document.getElementById('tipoDocumento').value;
-            const file = fileInput.files[0];
+async function salvarCargaHoraria() {
+    var horas = document.getElementById('cargaHoraria').value;
+    await fetch(API + '/api/validation/config/direcao-defensiva/carga-horaria/' + horas, { method: 'PUT' });
+    showToast('Carga horária mínima salva: ' + horas + 'h');
+}
 
-            if (!tipoDocumento || !file) {
-                showError('Por favor, selecione o tipo de documento e a imagem');
-                return;
-            }
+async function adicionarCurso() {
+    var val = document.getElementById('novoCurso').value.trim();
+    if (!val) return;
+    var res = await fetch(API + '/api/validation/config/direcao-defensiva');
+    var config = await res.json();
+    config.cursosAceitos = config.cursosAceitos || [];
+    if (config.cursosAceitos.indexOf(val) === -1) config.cursosAceitos.push(val);
+    await fetch(API + '/api/validation/config/direcao-defensiva', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(config)
+    });
+    document.getElementById('novoCurso').value = '';
+    loadConfig(); showToast('Curso adicionado!');
+}
 
-            // Converter arquivo para base64
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                const base64 = e.target.result.split(',')[1];
+async function removerCurso(curso) {
+    var res = await fetch(API + '/api/validation/config/direcao-defensiva');
+    var config = await res.json();
+    config.cursosAceitos = (config.cursosAceitos || []).filter(function(c) { return c !== curso; });
+    await fetch(API + '/api/validation/config/direcao-defensiva', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(config)
+    });
+    loadConfig(); showToast('Curso removido');
+}
 
-                try {
-                    loading.classList.add('show');
-                    error.classList.remove('show');
-                    results.classList.remove('show');
-
-                    const response = await fetch('/api/validation', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            tipoDocumento: tipoDocumento,
-                            base64Arquivo: base64
-                        })
-                    });
-
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(errorData.error || 'Erro ao processar documento');
-                    }
-
-                    const data = await response.json();
-                    displayResults(data);
-                } catch (err) {
-                    showError(err.message);
-                } finally {
-                    loading.classList.remove('show');
-                }
-            };
-            reader.readAsDataURL(file);
-        });
-
-        function displayResults(data) {
-            const statusEmoji = {
-                'APROVADO': '✓',
-                'ANÁLISE MANUAL': '⚠',
-                'REPROVADO': '✗'
-            };
-
-            const statusClass = {
-                'APROVADO': 'approved',
-                'ANÁLISE MANUAL': 'manual',
-                'REPROVADO': 'rejected'
-            };
-
-            resultCard.className = `result-card ${statusClass[data.status] || 'rejected'}`;
-
-            document.getElementById('resultStatus').innerHTML = 
-                `${statusEmoji[data.status] || '?'} ${data.status}`;
-
-            const confidence = Math.round(data.confianca);
-            document.getElementById('confidenceValue').textContent = `${confidence}%`;
-            document.getElementById('barFill').style.width = `${confidence}%`;
-            document.getElementById('barFill').textContent = `${confidence}%`;
-
-            // Dados extraídos
-            const dadosHtml = `
-                <h4>Dados Extraídos:</h4>
-                ${data.dadosExtraidos.nome ? `<div class="dados-item"><span class="dados-label">Nome:</span><span class="dados-value">${data.dadosExtraidos.nome}</span></div>` : ''}
-                ${data.dadosExtraidos.validade ? `<div class="dados-item"><span class="dados-label">Validade:</span><span class="dados-value">${data.dadosExtraidos.validade}</span></div>` : ''}
-                ${data.dadosExtraidos.numeroDocumento ? `<div class="dados-item"><span class="dados-label">Número:</span><span class="dados-value">${data.dadosExtraidos.numeroDocumento}</span></div>` : ''}
-                ${data.dadosExtraidos.textoExtraido ? `<div class="dados-item"><span class="dados-label">Texto (primeiras linhas):</span><span class="dados-value">${data.dadosExtraidos.textoExtraido}...</span></div>` : ''}
-            `;
-            document.getElementById('dadosExtraidos').innerHTML = dadosHtml;
-
-            // Motivos
-            const motivosList = document.getElementById('motivosList');
-            motivosList.innerHTML = data.motivos.map(m => `<li>${m}</li>`).join('');
-
-            results.classList.add('show');
-        }
-
-        function showError(message) {
-            error.textContent = message;
-            error.classList.add('show');
-        }
-
-        // Limpar formulário
-        form.addEventListener('reset', () => {
-            filePreview.classList.remove('show');
-            results.classList.remove('show');
-            error.classList.remove('show');
-        });
-    </script>
+function showToast(msg) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(function() { t.classList.remove('show'); }, 3000);
+}
+</script>
 </body>
 </html>

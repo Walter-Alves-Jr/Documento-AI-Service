@@ -11,6 +11,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IOcrService, OcrService>();
 builder.Services.AddScoped<IDocumentAnalysisService, DocumentAnalysisService>();
 builder.Services.AddScoped<IPdfConverterService, PdfConverterService>();
+builder.Services.AddSingleton<IDirecaoDefensivaConfigService, DirecaoDefensivaConfigService>();
 
 // Adicionar CORS
 builder.Services.AddCors(options =>
