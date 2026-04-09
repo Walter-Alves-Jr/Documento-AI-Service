@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Document AI Service — BRF Calibrado v2.1</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0d1117;
+      --bg2: #161b22;
+      --bg3: #21262d;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text2: #8b949e;
+      --blue: #58a6ff;
+      --green: #3fb950;
+      --red: #f85149;
+      --yellow: #d29922;
+      --purple: #bc8cff;
+      --orange: #ffa657;
+      --accent: #1f6feb;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #0d1117 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 0;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(8px);
+    }
+    .header-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--text);
+      text-decoration: none;
+    }
+    .logo-icon {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--accent), var(--purple));
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+    .badge {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 0.75rem;
+      color: var(--blue);
+      font-weight: 500;
+    }
+    nav a {
+      color: var(--text2);
+      text-decoration: none;
+      font-size: 0.875rem;
+      margin-left: 20px;
+      transition: color .2s;
+    }
+    nav a:hover { color: var(--text); }
+
+    /* ── HERO ── */
+    .hero {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 72px 24px 56px;
+      text-align: center;
+    }
+    .hero-tag {
+      display: inline-block;
+      background: rgba(31,111,235,.15);
+      border: 1px solid rgba(88,166,255,.3);
+      border-radius: 20px;
+      padding: 5px 16px;
+      font-size: 0.8rem;
+      color: var(--blue);
+      margin-bottom: 20px;
+      font-weight: 500;
+    }
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 700;
+      line-height: 1.2;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, #e6edf3 30%, #58a6ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero p {
+      font-size: 1.1rem;
+      color: var(--text2);
+      max-width: 600px;
+      margin: 0 auto 36px;
+    }
+    .hero-buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .btn {
+      padding: 10px 22px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all .2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      border: 1px solid var(--accent);
+    }
+    .btn-primary:hover { background: #388bfd; }
+    .btn-secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { background: var(--bg3); }
+
+    /* ── STATS ── */
+    .stats {
+      max-width: 1100px;
+      margin: 0 auto 64px;
+      padding: 0 24px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+    }
+    .stat-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+    }
+    .stat-number {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--blue);
+    }
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--text2);
+      margin-top: 4px;
+    }
+
+    /* ── SECTIONS ── */
+    section {
+      max-width: 1100px;
+      margin: 0 auto 64px;
+      padding: 0 24px;
+    }
+    .section-title {
+      font-size: 1.4rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-subtitle {
+      color: var(--text2);
+      font-size: 0.9rem;
+      margin-bottom: 24px;
+    }
+
+    /* ── CARDS GRID ── */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 16px;
+    }
+    .card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      transition: border-color .2s;
+    }
+    .card:hover { border-color: var(--blue); }
+    .card-icon {
+      font-size: 1.5rem;
+      margin-bottom: 12px;
+    }
+    .card h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .card p {
+      font-size: 0.85rem;
+      color: var(--text2);
+      line-height: 1.5;
+    }
+
+    /* ── TEST RESULTS TABLE ── */
+    .results-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+    .results-table th {
+      background: var(--bg3);
+      padding: 10px 14px;
+      text-align: left;
+      font-weight: 600;
+      color: var(--text2);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      border-bottom: 1px solid var(--border);
+    }
+    .results-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    .results-table tr:last-child td { border-bottom: none; }
+    .results-table tr:hover td { background: rgba(255,255,255,.02); }
+    .table-wrap {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .status-aprovado { background: rgba(63,185,80,.15); color: #3fb950; border: 1px solid rgba(63,185,80,.3); }
+    .status-reprovado { background: rgba(248,81,73,.15); color: #f85149; border: 1px solid rgba(248,81,73,.3); }
+    .status-manual { background: rgba(210,153,34,.15); color: #d29922; border: 1px solid rgba(210,153,34,.3); }
+    .doc-name { font-weight: 500; }
+    .doc-file { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--text2); }
+
+    /* ── ESCOLAS ── */
+    .escolas-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 10px;
+    }
+    .escola-item {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.875rem;
+    }
+    .escola-item .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .dot-green { background: var(--green); }
+    .dot-blue { background: var(--blue); }
+    .escola-name { font-weight: 500; }
+    .escola-rule { font-size: 0.75rem; color: var(--text2); }
+
+    /* ── API DOCS ── */
+    .code-block {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 20px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      overflow-x: auto;
+      line-height: 1.7;
+    }
+    .code-block .kw { color: var(--purple); }
+    .code-block .str { color: #a5d6ff; }
+    .code-block .num { color: var(--orange); }
+    .code-block .cmt { color: var(--text2); font-style: italic; }
+    .code-block .key { color: var(--blue); }
+
+    .endpoint-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .method-badge {
+      padding: 3px 10px;
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .method-post { background: rgba(63,185,80,.2); color: var(--green); }
+    .method-get { background: rgba(88,166,255,.2); color: var(--blue); }
+    .endpoint-path {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+    .endpoint-desc { font-size: 0.82rem; color: var(--text2); }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 24px;
+      text-align: center;
+      color: var(--text2);
+      font-size: 0.82rem;
+    }
+    footer a { color: var(--blue); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    /* ── DIVIDER ── */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 0 0 64px;
+    }
+
+    /* ── TABS ── */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .tab {
+      padding: 8px 16px;
+      font-size: 0.875rem;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      color: var(--text2);
+      transition: all .2s;
+      margin-bottom: -1px;
+    }
+    .tab.active { color: var(--text); border-bottom-color: var(--blue); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* ── TIMELINE ── */
+    .timeline {
+      position: relative;
+      padding-left: 28px;
+    }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 8px; top: 0; bottom: 0;
+      width: 2px;
+      background: var(--border);
+    }
+    .timeline-item {
+      position: relative;
+      margin-bottom: 20px;
+    }
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -24px; top: 6px;
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--blue);
+      border: 2px solid var(--bg);
+    }
+    .timeline-item h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 4px; }
+    .timeline-item p { font-size: 0.82rem; color: var(--text2); }
+
+    @media (max-width: 640px) {
+      .hero { padding: 48px 16px 40px; }
+      .stats, section { padding: 0 16px; }
+      .results-table { font-size: 0.78rem; }
+      .results-table th, .results-table td { padding: 8px 10px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-inner">
+    <a class="logo" href="#">
+      <div class="logo-icon">🤖</div>
+      Document AI Service
+    </a>
+    <div style="display:flex;align-items:center;gap:16px;">
+      <span class="badge">v2.1 BRF Calibrado</span>
+      <nav>
+        <a href="#features">Recursos</a>
+        <a href="#escolas">Escolas</a>
+        <a href="#resultados">Testes</a>
+        <a href="#api">API</a>
+        <a href="https://github.com/Walter-Alves-Jr/Documento-AI-Service" target="_blank">GitHub ↗</a>
+      </nav>
+    </div>
+  </div>
+</header>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-tag">🚛 Calibrado para BRF — Transportadoras Homologadas</div>
+  <h1>Validação Automática<br/>de Documentos com IA</h1>
+  <p>Serviço de análise inteligente de CNH, ASO e Certificados de Direção Defensiva com regras específicas da BRF para credenciamento de motoristas.</p>
+  <div class="hero-buttons">
+    <a href="#api" class="btn btn-primary">📡 Ver API</a>
+    <a href="https://github.com/Walter-Alves-Jr/Documento-AI-Service" class="btn btn-secondary" target="_blank">⭐ GitHub</a>
+    <a href="#resultados" class="btn btn-secondary">📊 Resultados</a>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats">
+  <div class="stat-card">
+    <div class="stat-number">3</div>
+    <div class="stat-label">Tipos de Documento</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-number">9</div>
+    <div class="stat-label">Escolas Homologadas BRF</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-number">MRZ</div>
+    <div class="stat-label">Extração CNH-e Digital</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-number">4×</div>
+    <div class="stat-label">Rotações OCR Automáticas</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-number">.NET 8</div>
+    <div class="stat-label">ASP.NET Core + Tesseract</div>
+  </div>
+</div>
+
+<div class="divider" style="max-width:1100px;margin:0 auto 64px;"></div>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="section-title">⚡ Recursos Principais</div>
+  <div class="section-subtitle">Tecnologias e capacidades do serviço de validação</div>
+  <div class="cards">
+    <div class="card">
+      <div class="card-icon">🔍</div>
+      <h3>OCR Multi-Estratégia</h3>
+      <p>10 estratégias de OCR com Tesseract: rotação 0°, 90°, 180°, 270°, escala 2× e contraste adaptativo. Seleciona automaticamente o melhor resultado.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🪪</div>
+      <h3>Extração MRZ (CNH-e)</h3>
+      <p>Lê o código de barras MRZ da CNH digital para extrair nome completo e data de validade com precisão, mesmo quando o OCR falha no texto impresso.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🏫</div>
+      <h3>Lista Oficial BRF</h3>
+      <p>Verifica se o certificado de Direção Defensiva foi emitido por escola homologada pela BRF. Regra diferenciada: SEST SENAT mínimo 4h, demais mínimo 8h.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🩺</div>
+      <h3>Validação ASO</h3>
+      <p>Extrai nome, empresa, resultado (Apto/Inapto), data de realização e calcula validade automática (6, 12 ou 24 meses) conforme marcação no documento.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">📅</div>
+      <h3>Verificação de Vencimento</h3>
+      <p>Compara datas de validade com a data atual. CNH vencida, ASO expirado e certificado de direção defensiva com mais de 5 anos são automaticamente reprovados.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🔗</div>
+      <h3>API REST + Base64</h3>
+      <p>Endpoint único via POST com arquivo em Base64. Suporta PDF (convertido automaticamente) e imagens JPG/PNG. Resposta JSON estruturada com todos os dados extraídos.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ESCOLAS BRF -->
+<section id="escolas">
+  <div class="section-title">🏫 Escolas Homologadas BRF</div>
+  <div class="section-subtitle">Lista oficial de instituições aceitas para credenciamento de motoristas — atualizada conforme documento BRF</div>
+  <div class="escolas-grid">
+    <div class="escola-item">
+      <span class="dot dot-green"></span>
+      <div>
+        <div class="escola-name">Hartmann</div>
+        <div class="escola-rule">Mín. 8h</div>
+      </div>
+    </div>
+    <div class="escola-item">
+      <span class="dot dot-green"></span>
+      <div>
+        <div class="escola-name">Inttergramed</div>
+        <div class="escola-rule">Mín. 8h</div>
+      </div>
+    </div>
+    <div class="escola-item">
+      <span class="dot dot-green"></span>
+      <div>
+        <div class="escola-name">Eco Trainning</div>
+        <div class="escola-rule">Mín. 8h</div>
+      </div>
+    </div>
+    <div class="escola-item">
+      <span class="dot dot-blue"></span>
+      <div>
+        <div class="escola-name">SEST SENAT</div>
+        <div class="escola-rule">Mín. <strong style="color:#58a6ff">4h</strong> (regra especial)</div>
+      </div>
+    </div>
+    <div class="escola-item">
+      <span class="dot dot-green"></span>
+      <div>
+        <div class="escola-name">Concórdia Treinamentos</div>
+        <div class="escola-rule">Mín. 8h</div>
+      </div>
+    </div>
+    <div class="escola-item">
+      <span class="dot dot-green"></span>
+      <div>
+        <div class="escola-name">FABET</div>
+        <div class="escola-rule">Mín. 8h</div>
+      </div>
+    </div>
+    <div class="escola-item">
+      <span class="dot dot-green"></span>
+      <div>
+        <div class="escola-name">Champonalli</div>
+        <div class="escola-rule">Centro de Formação de Condutores — Mín. 8h</div>
+      </div>
+    </div>
+    <div class="escola-item">
+      <span class="dot dot-green"></span>
+      <div>
+        <div class="escola-name">CERTO</div>
+        <div class="escola-rule">Centro de Ref. em Treinamento Op. — Mín. 8h</div>
+      </div>
+    </div>
+    <div class="escola-item">
+      <span class="dot dot-green"></span>
+      <div>
+        <div class="escola-name">CIT Drive</div>
+        <div class="escola-rule">Consultoria Integrada ao Transportador — Mín. 8h</div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:16px;padding:12px 16px;background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.2);border-radius:8px;font-size:0.82rem;color:#f85149;">
+    ⚠️ <strong>Não aceitas:</strong> UNIGIO, SENAI, SENAC, CFC, Autoescolas genéricas e plataformas EAD não homologadas pela BRF.
+  </div>
+</section>
+
+<!-- RESULTADOS DOS TESTES -->
+<section id="resultados">
+  <div class="section-title">📊 Resultados dos Testes — 9 Documentos Reais</div>
+  <div class="section-subtitle">Validação com documentos reais de motoristas BRF — versão v2.1</div>
+
+  <div class="table-wrap">
+    <table class="results-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Documento</th>
+          <th>Tipo</th>
+          <th>Resultado</th>
+          <th>Nome Extraído</th>
+          <th>Validade</th>
+          <th>Observação</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td>
+            <div class="doc-name">CNH Darley</div>
+            <div class="doc-file">1080447_CNH_DARLEY.pdf</div>
+          </td>
+          <td>CNH</td>
+          <td><span class="status-badge status-reprovado">✗ REPROVADO</span></td>
+          <td>—</td>
+          <td>—</td>
+          <td style="font-size:.78rem;color:var(--text2)">OCR ilegível — digitalização ruim</td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td>
+            <div class="doc-name">CNH Física M3492</div>
+            <div class="doc-file">M3492.jpg</div>
+          </td>
+          <td>CNH</td>
+          <td><span class="status-badge status-reprovado">✗ REPROVADO</span></td>
+          <td>—</td>
+          <td>—</td>
+          <td style="font-size:.78rem;color:var(--text2)">Layout duas colunas — sem nome/validade</td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td>
+            <div class="doc-name">CNH Luiz Carlos</div>
+            <div class="doc-file">LUIZCARLOSARSEGO-1.pdf</div>
+          </td>
+          <td>CNH</td>
+          <td><span class="status-badge status-reprovado">✗ REPROVADO</span></td>
+          <td>—</td>
+          <td>—</td>
+          <td style="font-size:.78rem;color:var(--text2)">Documento em ângulo extremo</td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td>
+            <div class="doc-name">ASO Luiz Carlos</div>
+            <div class="doc-file">ASO.jpg</div>
+          </td>
+          <td>ASO</td>
+          <td><span class="status-badge status-reprovado">✗ REPROVADO</span></td>
+          <td>Luiz Carlos Arsego</td>
+          <td>03/03/2026</td>
+          <td style="font-size:.78rem;color:#f85149">ASO vencido (realizado 03/03/2025)</td>
+        </tr>
+        <tr>
+          <td>5</td>
+          <td>
+            <div class="doc-name">Dir. Defensiva PRIME CURSOS</div>
+            <div class="doc-file">dire.pdf</div>
+          </td>
+          <td>Dir. Defensiva</td>
+          <td><span class="status-badge status-reprovado">✗ REPROVADO</span></td>
+          <td>DARLEY DE CARVALHO</td>
+          <td>30/09/2030</td>
+          <td style="font-size:.78rem;color:#f85149">PRIME CURSOS não homologada BRF</td>
+        </tr>
+        <tr>
+          <td>6</td>
+          <td>
+            <div class="doc-name">CNH-e Digital</div>
+            <div class="doc-file">CNH-e.pdf-1.pdf</div>
+          </td>
+          <td>CNH</td>
+          <td><span class="status-badge status-aprovado">✓ APROVADO</span></td>
+          <td>LEONARDO VIEIRA SILVA</td>
+          <td>20/04/2033</td>
+          <td style="font-size:.78rem;color:var(--green)">Nome e validade via MRZ ✨</td>
+        </tr>
+        <tr>
+          <td>7</td>
+          <td>
+            <div class="doc-name">ASO Miguel Luci</div>
+            <div class="doc-file">ASOMIGUELLUCI.pdf</div>
+          </td>
+          <td>ASO</td>
+          <td><span class="status-badge status-manual">⚠ ANÁLISE MANUAL</span></td>
+          <td>MIGUEL DEOCLIDES BANDEIRA</td>
+          <td>—</td>
+          <td style="font-size:.78rem;color:var(--yellow)">Data manuscrita ilegível</td>
+        </tr>
+        <tr>
+          <td>8</td>
+          <td>
+            <div class="doc-name">Dir. Defensiva Leonardo</div>
+            <div class="doc-file">Defensivaleonardo.pdf</div>
+          </td>
+          <td>Dir. Defensiva</td>
+          <td><span class="status-badge status-reprovado">✗ REPROVADO</span></td>
+          <td>Leonardo Vieira Silva</td>
+          <td>31/03/2031</td>
+          <td style="font-size:.78rem;color:#f85149">UNIGIO não homologada BRF</td>
+        </tr>
+        <tr>
+          <td>9</td>
+          <td>
+            <div class="doc-name">CNH Leonardo Vieira</div>
+            <div class="doc-file">LEONARDOVIEIRASILVA.pdf</div>
+          </td>
+          <td>CNH</td>
+          <td><span class="status-badge status-aprovado">✓ APROVADO</span></td>
+          <td>LEONARDO VIEIRA SILVA</td>
+          <td>31/03/2027</td>
+          <td style="font-size:.78rem;color:var(--green)">Todos os dados extraídos</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-top:20px;">
+    <div style="background:rgba(63,185,80,.1);border:1px solid rgba(63,185,80,.2);border-radius:8px;padding:14px;text-align:center;">
+      <div style="font-size:1.6rem;font-weight:700;color:var(--green)">2</div>
+      <div style="font-size:.78rem;color:var(--text2)">Aprovados</div>
+    </div>
+    <div style="background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.2);border-radius:8px;padding:14px;text-align:center;">
+      <div style="font-size:1.6rem;font-weight:700;color:var(--red)">6</div>
+      <div style="font-size:.78rem;color:var(--text2)">Reprovados</div>
+    </div>
+    <div style="background:rgba(210,153,34,.1);border:1px solid rgba(210,153,34,.2);border-radius:8px;padding:14px;text-align:center;">
+      <div style="font-size:1.6rem;font-weight:700;color:var(--yellow)">1</div>
+      <div style="font-size:.78rem;color:var(--text2)">Análise Manual</div>
+    </div>
+    <div style="background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.2);border-radius:8px;padding:14px;text-align:center;">
+      <div style="font-size:1.6rem;font-weight:700;color:var(--blue)">100%</div>
+      <div style="font-size:.78rem;color:var(--text2)">Decisões Corretas</div>
+    </div>
+  </div>
+</section>
+
+<!-- API DOCS -->
+<section id="api">
+  <div class="section-title">📡 Documentação da API</div>
+  <div class="section-subtitle">Integração REST simples com arquivo em Base64</div>
+
+  <div class="endpoint-row">
+    <span class="method-badge method-post">POST</span>
+    <div>
+      <div class="endpoint-path">/api/validation</div>
+      <div class="endpoint-desc">Valida um documento (CNH, ASO ou Direção Defensiva) enviado em Base64</div>
+    </div>
+  </div>
+  <div class="endpoint-row">
+    <span class="method-badge method-get">GET</span>
+    <div>
+      <div class="endpoint-path">/api/validation/health</div>
+      <div class="endpoint-desc">Verifica status do serviço e versão</div>
+    </div>
+  </div>
+  <div class="endpoint-row">
+    <span class="method-badge method-get">GET</span>
+    <div>
+      <div class="endpoint-path">/api/validation/config</div>
+      <div class="endpoint-desc">Retorna configuração atual (escolas, carga horária, cursos aceitos)</div>
+    </div>
+  </div>
+
+  <div style="margin-top:24px;">
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab(this,'tab-req')">Requisição</div>
+      <div class="tab" onclick="switchTab(this,'tab-resp-ok')">Resposta (Aprovado)</div>
+      <div class="tab" onclick="switchTab(this,'tab-resp-rep')">Resposta (Reprovado)</div>
+      <div class="tab" onclick="switchTab(this,'tab-python')">Python</div>
+    </div>
+
+    <div id="tab-req" class="tab-content active">
+      <div class="code-block">
+<span class="cmt">// POST /api/validation</span>
+<span class="cmt">// Content-Type: application/json</span>
+
+{
+  <span class="key">"tipoDocumento"</span>: <span class="str">"CNH"</span>,          <span class="cmt">// CNH | ASO | DirecaoDefensiva</span>
+  <span class="key">"base64Arquivo"</span>: <span class="str">"JVBERi0xLjQ..."</span>  <span class="cmt">// PDF ou imagem em Base64</span>
+}
+      </div>
+    </div>
+
+    <div id="tab-resp-ok" class="tab-content">
+      <div class="code-block">
+{
+  <span class="key">"status"</span>: <span class="str">"APROVADO"</span>,
+  <span class="key">"confianca"</span>: <span class="num">99</span>,
+  <span class="key">"motivos"</span>: [
+    <span class="str">"✓ OCR realizado com sucesso (confiança: 85.00 %)"</span>,
+    <span class="str">"✓ Documento identificado como CNH"</span>,
+    <span class="str">"✓ Nome encontrado: LEONARDO VIEIRA SILVA"</span>,
+    <span class="str">"✓ Documento válido até: 20/04/2033"</span>,
+    <span class="str">"✓ Número do documento: 2608706174"</span>,
+    <span class="str">"✓ CNH aprovada automaticamente"</span>
+  ],
+  <span class="key">"dadosExtraidos"</span>: {
+    <span class="key">"nome"</span>: <span class="str">"LEONARDO VIEIRA SILVA"</span>,
+    <span class="key">"validade"</span>: <span class="str">"20/04/2033"</span>,
+    <span class="key">"numeroDocumento"</span>: <span class="str">"2608706174"</span>
+  }
+}
+      </div>
+    </div>
+
+    <div id="tab-resp-rep" class="tab-content">
+      <div class="code-block">
+{
+  <span class="key">"status"</span>: <span class="str">"REPROVADO"</span>,
+  <span class="key">"confianca"</span>: <span class="num">79</span>,
+  <span class="key">"motivos"</span>: [
+    <span class="str">"✓ Documento identificado como certificado de Direção Defensiva"</span>,
+    <span class="str">"✓ Nome encontrado: DARLEY DE CARVALHO"</span>,
+    <span class="str">"✗ Escola não está na lista de homologadas BRF. Identificada: PRIME CURSOS DO BRASIL"</span>,
+    <span class="str">"  Escolas aceitas: Hartmann, Inttergramed, Eco Trainning, SEST SENAT, ..."</span>,
+    <span class="str">"✗ Reprovado: escola não está na lista de homologadas BRF"</span>
+  ],
+  <span class="key">"dadosExtraidos"</span>: {
+    <span class="key">"nome"</span>: <span class="str">"DARLEY DE CARVALHO"</span>,
+    <span class="key">"escola"</span>: <span class="str">"PRIME CURSOS DO BRASIL"</span>,
+    <span class="key">"escolaAprovada"</span>: <span class="kw">false</span>,
+    <span class="key">"cargaHorariaHoras"</span>: <span class="num">15</span>,
+    <span class="key">"validade"</span>: <span class="str">"30/09/2030"</span>
+  }
+}
+      </div>
+    </div>
+
+    <div id="tab-python" class="tab-content">
+      <div class="code-block">
+<span class="kw">import</span> base64, requests
+
+<span class="kw">def</span> <span class="key">validar_documento</span>(caminho_arquivo, tipo):
+    <span class="kw">with</span> open(caminho_arquivo, <span class="str">"rb"</span>) <span class="kw">as</span> f:
+        b64 = base64.b64encode(f.read()).decode()
+
+    r = requests.post(
+        <span class="str">"http://seu-servidor:5000/api/validation"</span>,
+        json={
+            <span class="str">"tipoDocumento"</span>: tipo,
+            <span class="str">"base64Arquivo"</span>: b64
+        },
+        timeout=<span class="num">60</span>
+    )
+    <span class="kw">return</span> r.json()
+
+<span class="cmt"># Exemplos de uso</span>
+resultado = validar_documento(<span class="str">"CNH.pdf"</span>, <span class="str">"CNH"</span>)
+resultado = validar_documento(<span class="str">"ASO.jpg"</span>, <span class="str">"ASO"</span>)
+resultado = validar_documento(<span class="str">"cert.pdf"</span>, <span class="str">"DirecaoDefensiva"</span>)
+
+print(resultado[<span class="str">"status"</span>])      <span class="cmt"># APROVADO | REPROVADO | ANÁLISE MANUAL</span>
+print(resultado[<span class="str">"confianca"</span>])   <span class="cmt"># 0–100</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CHANGELOG -->
+<section id="changelog">
+  <div class="section-title">📋 Histórico de Versões</div>
+  <div class="section-subtitle">Evolução do sistema de validação</div>
+  <div class="timeline">
+    <div class="timeline-item">
+      <h4>v2.1 — Calibração BRF Completa <span style="color:var(--blue);font-size:.75rem;margin-left:8px;">Atual</span></h4>
+      <p>Lista oficial de escolas BRF, extração MRZ para CNH-e digital, rotação 90°/270°, correção do bug do arquivo de configuração em disco, carga horária diferenciada SEST SENAT (4h) vs demais (8h).</p>
+    </div>
+    <div class="timeline-item">
+      <h4>v2.0 — Reescrita Completa</h4>
+      <p>Migração para .NET 8, arquitetura de serviços, suporte a PDF via pdftoppm, validação de ASO com cálculo de validade, múltiplas estratégias de OCR.</p>
+    </div>
+    <div class="timeline-item">
+      <h4>v1.0 — Versão Inicial</h4>
+      <p>Validação básica de CNH e ASO com Tesseract OCR, endpoint REST simples.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <p>
+    Document AI Service — Desenvolvido para <strong>BRF</strong> · Credenciamento de Motoristas<br/>
+    <a href="https://github.com/Walter-Alves-Jr/Documento-AI-Service" target="_blank">github.com/Walter-Alves-Jr/Documento-AI-Service</a>
+  </p>
+</footer>
+
+<script>
+  function switchTab(el, id) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById(id).classList.add('active');
+  }
+
+  // Smooth scroll
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      const el = document.querySelector(a.getAttribute('href'));
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+
+  // Animate stats on scroll
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) e.target.style.opacity = '1';
+    });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.stat-card, .card, .escola-item').forEach(el => {
+    el.style.opacity = '0';
+    el.style.transition = 'opacity .4s ease';
+    observer.observe(el);
+  });
+</script>
+</body>
+</html>
