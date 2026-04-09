@@ -8,8 +8,11 @@ public interface IDirecaoDefensivaConfigService
     DirecaoDefensivaConfig GetConfig();
     void UpdateConfig(DirecaoDefensivaConfig config);
     bool IsEscolaAprovada(string textoDocumento);
-    bool IsCargaHorariaAdequada(int horas);
+    bool IsCargaHorariaAdequada(int horas, string textoDocumento);
     bool IsCursoAceito(string nomeCurso);
+    bool IsEscolaSestSenat(string textoDocumento);
+    int GetCargaHorariaMinimaParaEscola(string textoDocumento);
+    bool IsMotoristasInstrutorHomologado(string textoDocumento);
 }
 
 public class DirecaoDefensivaConfigService : IDirecaoDefensivaConfigService
@@ -65,54 +68,96 @@ public class DirecaoDefensivaConfigService : IDirecaoDefensivaConfigService
         }
     }
 
+    private string NormalizeText(string text)
+    {
+        return text.ToLower()
+            .Replace("ç", "c").Replace("ã", "a").Replace("á", "a")
+            .Replace("é", "e").Replace("ê", "e").Replace("í", "i")
+            .Replace("ó", "o").Replace("ô", "o").Replace("ú", "u")
+            .Replace("à", "a").Replace("â", "a").Replace("î", "i")
+            .Replace("û", "u").Replace("ü", "u");
+    }
+
+    public bool IsEscolaSestSenat(string textoDocumento)
+    {
+        if (string.IsNullOrEmpty(textoDocumento)) return false;
+        var textoNorm = NormalizeText(textoDocumento);
+        return textoNorm.Contains("sest senat") || textoNorm.Contains("sestsenat") ||
+               textoNorm.Contains("sest/senat") ||
+               textoNorm.Contains("servico nacional de aprendizagem do transporte");
+    }
+
+    public int GetCargaHorariaMinimaParaEscola(string textoDocumento)
+    {
+        // SEST SENAT: mínimo 4 horas (regra BRF)
+        if (IsEscolaSestSenat(textoDocumento))
+            return _config.CargaHorariaMinimaHorasSestSenat;
+
+        // Demais escolas: mínimo 8 horas (regra BRF)
+        return _config.CargaHorariaMinimaHoras;
+    }
+
     public bool IsEscolaAprovada(string textoDocumento)
     {
         if (string.IsNullOrEmpty(textoDocumento)) return false;
-        var textoLower = textoDocumento.ToLower()
-            .Replace("ç", "c").Replace("ã", "a").Replace("á", "a")
-            .Replace("é", "e").Replace("ê", "e").Replace("í", "i")
-            .Replace("ó", "o").Replace("ô", "o").Replace("ú", "u");
+        var textoNorm = NormalizeText(textoDocumento);
 
         foreach (var escola in _config.EscolasAprovadas)
         {
-            var escolaLower = escola.ToLower()
-                .Replace("ç", "c").Replace("ã", "a").Replace("á", "a")
-                .Replace("é", "e").Replace("ê", "e").Replace("í", "i")
-                .Replace("ó", "o").Replace("ô", "o").Replace("ú", "u");
-
-            if (textoLower.Contains(escolaLower))
+            var escolaNorm = NormalizeText(escola);
+            if (textoNorm.Contains(escolaNorm))
             {
                 _logger.LogInformation($"Escola aprovada encontrada: {escola}");
                 return true;
             }
         }
+        // Verificar também motoristas instrutores homologados
+        return IsMotoristasInstrutorHomologado(textoDocumento);
+    }
+
+    public bool IsMotoristasInstrutorHomologado(string textoDocumento)
+    {
+        if (string.IsNullOrEmpty(textoDocumento)) return false;
+        var textoNorm = NormalizeText(textoDocumento);
+
+        foreach (var instrutor in _config.MotoristasInstrutoresHomologados)
+        {
+            var instrutorNorm = NormalizeText(instrutor);
+            var partes = instrutorNorm.Split(' ');
+            if (partes.Length >= 2)
+            {
+                bool encontrado = textoNorm.Contains(instrutorNorm);
+                if (!encontrado && partes.Length >= 3)
+                {
+                    var parcial = partes[0] + " " + partes[partes.Length - 1];
+                    encontrado = textoNorm.Contains(parcial);
+                }
+                if (encontrado)
+                {
+                    _logger.LogInformation($"Motorista instrutor homologado encontrado: {instrutor}");
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
-    public bool IsCargaHorariaAdequada(int horas)
+    public bool IsCargaHorariaAdequada(int horas, string textoDocumento)
     {
-        return horas >= _config.CargaHorariaMinimaHoras;
+        int minimo = GetCargaHorariaMinimaParaEscola(textoDocumento);
+        return horas >= minimo;
     }
 
     public bool IsCursoAceito(string nomeCurso)
     {
         if (string.IsNullOrEmpty(nomeCurso)) return false;
-        var cursoLower = nomeCurso.ToLower()
-            .Replace("ç", "c").Replace("ã", "a").Replace("á", "a")
-            .Replace("é", "e").Replace("ê", "e").Replace("í", "i")
-            .Replace("ó", "o").Replace("ô", "o").Replace("ú", "u");
+        var cursoNorm = NormalizeText(nomeCurso);
 
         foreach (var curso in _config.CursosAceitos)
         {
-            var cursoAceitoLower = curso.ToLower()
-                .Replace("ç", "c").Replace("ã", "a").Replace("á", "a")
-                .Replace("é", "e").Replace("ê", "e").Replace("í", "i")
-                .Replace("ó", "o").Replace("ô", "o").Replace("ú", "u");
-
-            if (cursoLower.Contains(cursoAceitoLower) || cursoAceitoLower.Contains(cursoLower))
-            {
+            var cursoAceitoNorm = NormalizeText(curso);
+            if (cursoNorm.Contains(cursoAceitoNorm) || cursoAceitoNorm.Contains(cursoNorm))
                 return true;
-            }
         }
         return false;
     }

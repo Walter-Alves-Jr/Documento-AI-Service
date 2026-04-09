@@ -1,13 +1,13 @@
 using System.Diagnostics;
-using System.Text.RegularExpressions;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace DocumentAIService.Services;
 
 public interface IOcrService
 {
-    Task<(string Text, double Confidence)> ExtractTextAsync(byte[] imageData);
+    Task<(string text, double confidence)> ExtractTextAsync(byte[] imageData);
 }
 
 public class OcrService : IOcrService
@@ -19,62 +19,86 @@ public class OcrService : IOcrService
         _logger = logger;
     }
 
-    public async Task<(string Text, double Confidence)> ExtractTextAsync(byte[] imageData)
+    public async Task<(string text, double confidence)> ExtractTextAsync(byte[] imageData)
     {
         try
         {
-            // Validar imagem
-            var imageQuality = await ValidateImageQuality(imageData);
-            _logger.LogInformation($"Image quality score: {imageQuality:F2}");
-            
-            if (imageQuality < 0.2)
+            // Estratégia 1: original, PSM=3, português
+            var t1 = await TryOcr(imageData, "por", 3);
+            if (IsGoodText(t1) && !IsInvertedText(t1)) return (t1, 0.85);
+
+            // Estratégia 2: original, PSM=6, português
+            var t2 = await TryOcr(imageData, "por", 6);
+            if (IsGoodText(t2) && !IsInvertedText(t2)) return (t2, 0.85);
+
+            // Estratégia 3: rotação 90° (documentos deitados)
+            var rotated90 = await TransformImage(imageData, scale: 1.0f, contrast: 1.0f, rotate: 90);
+            if (rotated90 != null)
             {
-                _logger.LogWarning("Image quality too low");
-                return (string.Empty, 0);
+                var t3 = await TryOcr(rotated90, "por", 3);
+                if (IsGoodText(t3) && !IsInvertedText(t3)) return (t3, 0.80);
             }
 
-            // Usar imagem original sem processamento para manter qualidade
-            _logger.LogInformation("Using original image for OCR");
-
-            // Salvar imagem temporária
-            var tempImagePath = Path.Combine(Path.GetTempPath(), $"ocr_{Guid.NewGuid()}.png");
-            await File.WriteAllBytesAsync(tempImagePath, imageData);
-            _logger.LogInformation($"Temporary image saved: {tempImagePath}");
-
-            try
+            // Estratégia 4: rotação 270° (documentos deitados ao contrário)
+            var rotated270 = await TransformImage(imageData, scale: 1.0f, contrast: 1.0f, rotate: 270);
+            if (rotated270 != null)
             {
-                // Chamar Tesseract via linha de comando
-                var text = await RunTesseractAsync(tempImagePath);
-                
-                if (!string.IsNullOrEmpty(text) && text.Length > 10)
-                {
-                    _logger.LogInformation($"OCR completed successfully. Text length: {text.Length}");
-                    return (text, 0.85); // Confiança padrão
-                }
-                else
-                {
-                    _logger.LogWarning($"OCR result too short. Length: {text?.Length ?? 0}");
-                }
-            }
-            finally
-            {
-                // Limpar arquivo temporário
-                try
-                {
-                    if (File.Exists(tempImagePath))
-                    {
-                        File.Delete(tempImagePath);
-                        _logger.LogInformation("Temporary image deleted");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning($"Failed to delete temporary file: {ex.Message}");
-                }
+                var t4 = await TryOcr(rotated270, "por", 3);
+                if (IsGoodText(t4) && !IsInvertedText(t4)) return (t4, 0.80);
             }
 
-            // Se Tesseract falhar, retornar vazio
-            _logger.LogWarning("OCR extraction failed");
+            // Estratégia 5: rotação 180° (PDFs invertidos de cabeça para baixo)
+            var rotated180 = await TransformImage(imageData, scale: 1.0f, contrast: 1.0f, rotate: 180);
+            if (rotated180 != null)
+            {
+                var t5 = await TryOcr(rotated180, "por", 3);
+                if (IsGoodText(t5) && !IsInvertedText(t5)) return (t5, 0.80);
+            }
+
+            // Estratégia 6: escala 2x + contraste (CNH física, documentos pequenos)
+            var scaled = await TransformImage(imageData, scale: 2.0f, contrast: 1.8f, rotate: 0);
+            if (scaled != null)
+            {
+                var t6 = await TryOcr(scaled, "por", 6);
+                if (IsGoodText(t6) && !IsInvertedText(t6)) return (t6, 0.80);
+
+                var t6b = await TryOcr(scaled, "por", 3);
+                if (IsGoodText(t6b) && !IsInvertedText(t6b)) return (t6b, 0.80);
+            }
+
+            // Estratégia 7: escala 2x + contraste + rotação 180°
+            var scaledRot = await TransformImage(imageData, scale: 2.0f, contrast: 1.8f, rotate: 180);
+            if (scaledRot != null)
+            {
+                var t7 = await TryOcr(scaledRot, "por", 3);
+                if (IsGoodText(t7) && !IsInvertedText(t7)) return (t7, 0.75);
+            }
+
+            // Estratégia 8: escala 2x + contraste + rotação 90°
+            var scaledRot90 = await TransformImage(imageData, scale: 2.0f, contrast: 1.8f, rotate: 90);
+            if (scaledRot90 != null)
+            {
+                var t8 = await TryOcr(scaledRot90, "por", 3);
+                if (IsGoodText(t8) && !IsInvertedText(t8)) return (t8, 0.75);
+            }
+
+            // Estratégia 9: escala 2x + contraste + rotação 270°
+            var scaledRot270 = await TransformImage(imageData, scale: 2.0f, contrast: 1.8f, rotate: 270);
+            if (scaledRot270 != null)
+            {
+                var t9 = await TryOcr(scaledRot270, "por", 3);
+                if (IsGoodText(t9) && !IsInvertedText(t9)) return (t9, 0.75);
+            }
+
+            // Estratégia 10: inglês como fallback (CNH com MRZ)
+            var t10 = await TryOcr(imageData, "eng", 3);
+            if (IsGoodText(t10)) return (t10, 0.65);
+
+            // Último recurso: retornar o melhor texto disponível mesmo que invertido
+            if (IsGoodText(t1)) return (t1, 0.50);
+            if (IsGoodText(t2)) return (t2, 0.50);
+
+            _logger.LogWarning("All OCR attempts failed");
             return (string.Empty, 0);
         }
         catch (Exception ex)
@@ -84,120 +108,105 @@ public class OcrService : IOcrService
         }
     }
 
-    private async Task<string> RunTesseractAsync(string imagePath)
+    /// <summary>
+    /// Detecta se o texto está invertido (rotacionado 180°) verificando padrões típicos de texto invertido.
+    /// Texto invertido em português tem muitas sequências de letras em ordem reversa.
+    /// </summary>
+    private bool IsInvertedText(string text)
     {
+        if (string.IsNullOrWhiteSpace(text)) return false;
+
+        // Palavras comuns em português que, se aparecerem invertidas, indicam rotação
+        var invertedIndicators = new[]
+        {
+            "euejues", "epiossedy", "ejebuesop", "ojnuysu", "seroJ",
+            "olutnoc", "oãçazilitu", "oãçazilaer", "oãçacifitreC",
+            "adedilaV", "oãçazilaV", "amaN", "emoN"
+        };
+
+        var lowerText = text.ToLower();
+        int invertedCount = invertedIndicators.Count(ind => lowerText.Contains(ind.ToLower()));
+        return invertedCount >= 2;
+    }
+
+    private async Task<string> TryOcr(byte[] imageData, string lang, int psm)
+    {
+        var tmp = Path.Combine(Path.GetTempPath(), $"ocr_{Guid.NewGuid()}.png");
+        var outBase = Path.Combine(Path.GetTempPath(), $"ocr_{Guid.NewGuid()}");
         try
         {
-            var outputPath = Path.Combine(Path.GetTempPath(), $"ocr_output_{Guid.NewGuid()}");
-            
-            var processInfo = new ProcessStartInfo
+            await File.WriteAllBytesAsync(tmp, imageData);
+            var psi = new ProcessStartInfo
             {
                 FileName = "tesseract",
-                Arguments = $"\"{imagePath}\" \"{outputPath}\" -l eng",
+                Arguments = $"\"{tmp}\" \"{outBase}\" -l {lang} --psm {psm}",
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 CreateNoWindow = true
             };
-
-            _logger.LogInformation($"Running Tesseract: {processInfo.FileName} {processInfo.Arguments}");
-
-            using var process = Process.Start(processInfo);
-            if (process == null)
-            {
-                _logger.LogError("Failed to start Tesseract process");
-                return string.Empty;
-            }
-
-            var output = await process.StandardOutput.ReadToEndAsync();
-            var error = await process.StandardError.ReadToEndAsync();
-            
-            await process.WaitForExitAsync();
-
-            if (process.ExitCode != 0)
-            {
-                _logger.LogError($"Tesseract exited with code {process.ExitCode}");
-                _logger.LogError($"Error output: {error}");
-            }
-
-            // Ler arquivo de saída
-            var textFile = $"{outputPath}.txt";
-            if (File.Exists(textFile))
-            {
-                var text = await File.ReadAllTextAsync(textFile);
-                
-                // Limpar arquivo
-                try { File.Delete(textFile); } catch { }
-                
-                return text;
-            }
-
-            _logger.LogWarning("Tesseract output file not found");
+            using var proc = Process.Start(psi);
+            if (proc == null) return string.Empty;
+            await proc.WaitForExitAsync();
+            var txtFile = outBase + ".txt";
+            if (File.Exists(txtFile))
+                return await File.ReadAllTextAsync(txtFile);
             return string.Empty;
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Tesseract execution error: {ex.Message}");
+            _logger.LogWarning($"TryOcr ({lang}, psm={psm}) error: {ex.Message}");
             return string.Empty;
+        }
+        finally
+        {
+            TryDelete(tmp);
+            TryDelete(outBase + ".txt");
         }
     }
 
-    private async Task<double> ValidateImageQuality(byte[] imageData)
+    private bool IsGoodText(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return false;
+        var clean = text.Trim();
+        if (clean.Length < 30) return false;
+        int alnum = clean.Count(c => char.IsLetterOrDigit(c));
+        return (double)alnum / clean.Length > 0.25;
+    }
+
+    private async Task<byte[]?> TransformImage(byte[] imageData, float scale, float contrast, int rotate)
     {
         try
         {
-            using var image = Image.Load(imageData);
-            
-            _logger.LogInformation($"Image dimensions: {image.Width}x{image.Height}");
-            
-            // Validar dimensões mínimas
-            if (image.Width < 200 || image.Height < 200)
+            using var image = Image.Load<Rgba32>(imageData);
+            image.Mutate(x =>
             {
-                _logger.LogWarning($"Image too small: {image.Width}x{image.Height}");
-                return 0.2;
-            }
-
-            // Validar proporção (documento pode ter várias proporções)
-            var aspectRatio = (double)image.Width / image.Height;
-            _logger.LogInformation($"Image aspect ratio: {aspectRatio:F2}");
-            
-            if (aspectRatio < 0.3 || aspectRatio > 3.0)
-            {
-                _logger.LogWarning($"Invalid aspect ratio: {aspectRatio:F2}");
-                return 0.3;
-            }
-
-            // Calcular contraste aproximado
-            var contrast = await CalculateContrast(image);
-            _logger.LogInformation($"Image contrast: {contrast:F2}");
-
-            // Retornar qualidade baseada em contraste
-            return Math.Min(1.0, contrast);
+                if (rotate != 0) x.Rotate(rotate);
+                if (scale != 1.0f)
+                {
+                    int newW = (int)(image.Width * scale);
+                    int newH = (int)(image.Height * scale);
+                    x.Resize(newW, newH);
+                }
+                if (contrast != 1.0f)
+                {
+                    x.Grayscale();
+                    x.Contrast(contrast);
+                }
+            });
+            using var ms = new MemoryStream();
+            await image.SaveAsPngAsync(ms);
+            return ms.ToArray();
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Image validation error: {ex.Message}");
-            return 0;
+            _logger.LogWarning($"TransformImage failed: {ex.Message}");
+            return null;
         }
     }
 
-    private Task<double> CalculateContrast(Image image)
+    private void TryDelete(string path)
     {
-        try
-        {
-            // Usar uma abordagem simplificada
-            var aspectRatio = (double)image.Width / image.Height;
-            var sizeScore = Math.Min(1.0, (image.Width * image.Height) / 1000000.0);
-            var ratioScore = 1.0 - Math.Abs(aspectRatio - 1.4) / 2.5; // Mais flexível
-            
-            var contrast = (sizeScore + ratioScore) / 2.0;
-            return Task.FromResult(Math.Min(1.0, Math.Max(0.3, contrast)));
-        }
-        catch
-        {
-            return Task.FromResult(0.5);
-        }
+        try { if (File.Exists(path)) File.Delete(path); } catch { }
     }
-
-
 }
