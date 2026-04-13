@@ -3,122 +3,341 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document AI Service</title>
+    <title>Document AI Service — v2.1 BRF</title>
     <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --success: #16a34a;
+            --warning: #d97706;
+            --danger: #dc2626;
+            --bg: #f0f2f5;
+            --card: #ffffff;
+            --text: #1a1a2e;
+            --text2: #6b7280;
+            --border: #e5e7eb;
+        }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; color: #333; }
-        header { background: linear-gradient(135deg, #1a1a2e, #16213e); color: white; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
-        header h1 { font-size: 1.4rem; font-weight: 600; }
-        header span { font-size: 0.8rem; opacity: 0.7; }
-        nav { background: white; border-bottom: 1px solid #e0e0e0; display: flex; padding: 0 32px; }
-        nav button { background: none; border: none; padding: 14px 20px; cursor: pointer; font-size: 0.9rem; color: #666; border-bottom: 3px solid transparent; transition: all 0.2s; }
-        nav button.active { color: #4f46e5; border-bottom-color: #4f46e5; font-weight: 600; }
-        nav button:hover { color: #4f46e5; }
-        .container { max-width: 900px; margin: 32px auto; padding: 0 16px; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); }
+
+        /* HEADER */
+        header {
+            background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+            color: white;
+            padding: 14px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.35);
+            position: sticky; top: 0; z-index: 100;
+        }
+        .header-left { display: flex; align-items: center; gap: 14px; }
+        header h1 { font-size: 1.3rem; font-weight: 700; }
+        .version-badge {
+            background: rgba(79,70,229,0.4);
+            border: 1px solid rgba(99,102,241,0.5);
+            color: #a5b4fc;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .header-status {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 0.8rem; color: rgba(255,255,255,0.7);
+        }
+        .status-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: #22c55e;
+            box-shadow: 0 0 6px #22c55e;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+
+        /* NAV */
+        nav {
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            padding: 0 32px;
+            gap: 4px;
+        }
+        nav button {
+            background: none; border: none;
+            padding: 14px 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: var(--text2);
+            border-bottom: 3px solid transparent;
+            transition: all .2s;
+            font-weight: 500;
+        }
+        nav button.active { color: var(--primary); border-bottom-color: var(--primary); }
+        nav button:hover { color: var(--primary); background: #f5f3ff; }
+
+        /* LAYOUT */
+        .container { max-width: 960px; margin: 28px auto; padding: 0 16px; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-        .card { background: white; border-radius: 12px; padding: 28px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-        .card h2 { font-size: 1.1rem; margin-bottom: 20px; color: #1a1a2e; }
+
+        /* CARDS */
+        .card {
+            background: var(--card);
+            border-radius: 14px;
+            padding: 28px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+            border: 1px solid var(--border);
+        }
+        .card-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* FORM */
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-        label { display: block; font-size: 0.85rem; font-weight: 600; color: #555; margin-bottom: 6px; }
-        select, input[type=text] { width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem; outline: none; transition: border-color 0.2s; }
-        select:focus, input[type=text]:focus { border-color: #4f46e5; }
-        .upload-area { border: 2px dashed #c7d2fe; border-radius: 10px; padding: 32px; text-align: center; cursor: pointer; transition: all 0.2s; background: #f8f7ff; margin-bottom: 16px; }
-        .upload-area:hover, .upload-area.dragover { border-color: #4f46e5; background: #eef2ff; }
-        .upload-icon { font-size: 2.5rem; margin-bottom: 8px; }
-        .upload-area p { color: #666; font-size: 0.9rem; }
-        .upload-area strong { color: #4f46e5; }
+        @media(max-width:600px) { .form-row { grid-template-columns: 1fr; } }
+        label { display: block; font-size: 0.82rem; font-weight: 600; color: var(--text2); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .04em; }
+        select, input[type=text] {
+            width: 100%; padding: 10px 14px;
+            border: 1.5px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color .2s;
+            background: #fafafa;
+        }
+        select:focus, input[type=text]:focus { border-color: var(--primary); background: #fff; }
+
+        /* UPLOAD */
+        .upload-area {
+            border: 2px dashed #c7d2fe;
+            border-radius: 12px;
+            padding: 36px;
+            text-align: center;
+            cursor: pointer;
+            transition: all .2s;
+            background: #f8f7ff;
+            margin-bottom: 16px;
+            position: relative;
+        }
+        .upload-area:hover, .upload-area.dragover { border-color: var(--primary); background: #eef2ff; }
+        .upload-icon { font-size: 2.8rem; margin-bottom: 10px; }
+        .upload-area p { color: var(--text2); font-size: 0.9rem; }
+        .upload-area strong { color: var(--primary); }
+        .upload-area .file-selected {
+            display: none;
+            background: #eef2ff;
+            border-radius: 8px;
+            padding: 10px 16px;
+            margin-top: 12px;
+            font-size: 0.88rem;
+            color: var(--primary);
+            font-weight: 600;
+        }
         #fileInput { display: none; }
-        #preview { max-width: 100%; max-height: 200px; border-radius: 8px; margin-top: 12px; display: none; }
-        .btn-primary { background: linear-gradient(135deg, #4f46e5, #7c3aed); color: white; border: none; padding: 12px 28px; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; width: 100%; transition: opacity 0.2s; }
-        .btn-primary:hover { opacity: 0.9; }
-        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-        .result-card { border-radius: 12px; padding: 24px; margin-top: 20px; display: none; animation: fadeIn 0.4s ease; }
-        @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
-        .result-card.aprovado { background: #f0fdf4; border: 1px solid #86efac; }
-        .result-card.manual { background: #fffbeb; border: 1px solid #fcd34d; }
-        .result-card.reprovado { background: #fef2f2; border: 1px solid #fca5a5; }
-        .status-badge { display: inline-flex; align-items: center; gap: 8px; font-size: 1.4rem; font-weight: 700; margin-bottom: 16px; }
-        .aprovado .status-badge { color: #16a34a; }
-        .manual .status-badge { color: #d97706; }
-        .reprovado .status-badge { color: #dc2626; }
-        .conf-wrap { margin-bottom: 20px; }
-        .conf-label { display: flex; justify-content: space-between; font-size: 0.85rem; color: #666; margin-bottom: 6px; }
+        #preview { max-width: 100%; max-height: 180px; border-radius: 8px; margin-top: 12px; display: none; }
+
+        /* BUTTON */
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), #7c3aed);
+            color: white; border: none;
+            padding: 13px 28px;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            transition: all .2s;
+            letter-spacing: .02em;
+        }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(79,70,229,.35); }
+        .btn-primary:disabled { opacity: .5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        /* LOADING */
+        .loading { display: none; text-align: center; padding: 32px; color: var(--text2); }
+        .spinner {
+            width: 40px; height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin .8s linear infinite;
+            margin: 0 auto 14px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* RESULT */
+        .result-card {
+            border-radius: 14px;
+            padding: 26px;
+            margin-top: 20px;
+            display: none;
+            animation: fadeIn .4s ease;
+            border: 1px solid;
+        }
+        @keyframes fadeIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+        .result-card.aprovado { background: #f0fdf4; border-color: #86efac; }
+        .result-card.manual   { background: #fffbeb; border-color: #fcd34d; }
+        .result-card.reprovado{ background: #fef2f2; border-color: #fca5a5; }
+
+        .status-badge { display: inline-flex; align-items: center; gap: 10px; font-size: 1.5rem; font-weight: 800; margin-bottom: 18px; }
+        .aprovado  .status-badge { color: var(--success); }
+        .manual    .status-badge { color: var(--warning); }
+        .reprovado .status-badge { color: var(--danger); }
+
+        .conf-wrap { margin-bottom: 22px; }
+        .conf-label { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text2); margin-bottom: 6px; }
         .conf-bar { height: 10px; background: #e5e7eb; border-radius: 99px; overflow: hidden; }
         .conf-fill { height: 100%; border-radius: 99px; transition: width 1s ease; }
-        .aprovado .conf-fill { background: #22c55e; }
-        .manual .conf-fill { background: #f59e0b; }
+        .aprovado  .conf-fill { background: #22c55e; }
+        .manual    .conf-fill { background: #f59e0b; }
         .reprovado .conf-fill { background: #ef4444; }
-        .dados-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px; }
-        .dado-item { background: rgba(255,255,255,0.7); border-radius: 8px; padding: 12px; }
-        .dado-lbl { font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 0.05em; }
-        .dado-val { font-size: 0.95rem; font-weight: 600; color: #1a1a2e; margin-top: 2px; }
-        .motivos h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 10px; color: #555; }
+
+        .dados-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-bottom: 22px; }
+        .dado-item { background: rgba(255,255,255,.75); border-radius: 10px; padding: 12px 14px; border: 1px solid rgba(0,0,0,.06); }
+        .dado-lbl { font-size: 0.72rem; color: #9ca3af; text-transform: uppercase; letter-spacing: .06em; }
+        .dado-val { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-top: 3px; }
+        .dado-val.escola-ok   { color: var(--success); }
+        .dado-val.escola-fail { color: var(--danger); }
+
+        .motivos h4 { font-size: 0.88rem; font-weight: 700; margin-bottom: 10px; color: var(--text2); text-transform: uppercase; letter-spacing: .04em; }
         .motivos ul { list-style: none; }
-        .motivos li { font-size: 0.88rem; padding: 4px 0; color: #444; }
+        .motivos li { font-size: 0.875rem; padding: 5px 0; color: #374151; border-bottom: 1px solid rgba(0,0,0,.04); }
+        .motivos li:last-child { border-bottom: none; }
+
+        /* CONFIG */
         .cfg-section { margin-bottom: 28px; }
-        .cfg-section h3 { font-size: 1rem; font-weight: 600; color: #1a1a2e; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid #e5e7eb; }
-        .tag-list { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; min-height: 36px; }
-        .tag { display: inline-flex; align-items: center; gap: 6px; background: #eef2ff; color: #4f46e5; border-radius: 99px; padding: 4px 12px; font-size: 0.85rem; }
-        .tag button { background: none; border: none; cursor: pointer; color: #ef4444; font-size: 1rem; line-height: 1; }
+        .cfg-section h3 { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+        .tag-list { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; min-height: 38px; }
+        .tag {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: #eef2ff; color: var(--primary);
+            border: 1px solid #c7d2fe;
+            border-radius: 99px; padding: 5px 12px;
+            font-size: 0.84rem; font-weight: 500;
+        }
+        .tag.sest { background: #ecfdf5; color: #059669; border-color: #6ee7b7; }
+        .tag button { background: none; border: none; cursor: pointer; color: #ef4444; font-size: 1rem; line-height: 1; padding: 0 2px; }
         .add-row { display: flex; gap: 8px; }
-        .add-row input { flex: 1; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem; outline: none; }
-        .add-row input:focus { border-color: #4f46e5; }
-        .btn-add { background: #4f46e5; color: white; border: none; padding: 10px 18px; border-radius: 8px; font-size: 0.88rem; cursor: pointer; white-space: nowrap; }
-        .btn-add:hover { background: #4338ca; }
-        .horas-row { display: flex; align-items: center; gap: 12px; }
-        .horas-row input[type=number] { width: 100px; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem; outline: none; }
-        .toast { position: fixed; bottom: 24px; right: 24px; background: #1a1a2e; color: white; padding: 12px 20px; border-radius: 8px; font-size: 0.9rem; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 9999; }
+        .add-row input { flex: 1; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 0.9rem; outline: none; }
+        .add-row input:focus { border-color: var(--primary); }
+        .btn-add { background: var(--primary); color: white; border: none; padding: 10px 18px; border-radius: 8px; font-size: 0.88rem; cursor: pointer; white-space: nowrap; font-weight: 600; }
+        .btn-add:hover { background: var(--primary-dark); }
+        .horas-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .horas-row input[type=number] { width: 100px; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 0.9rem; outline: none; }
+        .horas-info { font-size: 0.82rem; color: var(--text2); background: #f3f4f6; border-radius: 8px; padding: 8px 14px; }
+
+        /* HEALTH */
+        .health-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+        .health-item { background: #f9fafb; border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+        .health-item .h-label { font-size: 0.78rem; color: var(--text2); text-transform: uppercase; letter-spacing: .05em; }
+        .health-item .h-val { font-size: 1rem; font-weight: 700; color: var(--text); margin-top: 4px; }
+        .health-item .h-val.ok { color: var(--success); }
+
+        /* ESCOLAS INFO */
+        .escolas-info {
+            background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
+            border: 1px solid #86efac;
+            border-radius: 10px;
+            padding: 14px 18px;
+            margin-bottom: 16px;
+            font-size: 0.85rem;
+            color: #166534;
+        }
+        .escolas-info strong { display: block; margin-bottom: 4px; font-size: 0.9rem; }
+
+        /* TOAST */
+        .toast {
+            position: fixed; bottom: 24px; right: 24px;
+            background: #1a1a2e; color: white;
+            padding: 12px 20px; border-radius: 10px;
+            font-size: 0.9rem; opacity: 0;
+            transition: opacity .3s; pointer-events: none; z-index: 9999;
+            max-width: 320px; box-shadow: 0 4px 20px rgba(0,0,0,.3);
+        }
         .toast.show { opacity: 1; }
-        .loading { display: none; text-align: center; padding: 24px; color: #666; }
-        .spinner { width: 36px; height: 36px; border: 3px solid #e5e7eb; border-top-color: #4f46e5; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* API URL */
+        .api-url-bar {
+            background: #f3f4f6;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 16px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            color: var(--text2);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .api-url-bar span { color: #22c55e; font-weight: 700; }
     </style>
 </head>
 <body>
+
 <header>
-    <h1>🤖 Document AI Service</h1>
-    <span>v2.0 — Validação Inteligente de Documentos</span>
+    <div class="header-left">
+        <h1>🤖 Document AI Service</h1>
+        <span class="version-badge">v2.1 BRF</span>
+    </div>
+    <div class="header-status">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="statusText">Verificando...</span>
+    </div>
 </header>
+
 <nav>
     <button class="active" onclick="switchTab('validacao', this)">📄 Validação</button>
-    <button onclick="switchTab('config', this)">⚙️ Configurações</button>
+    <button onclick="switchTab('config', this)">⚙️ Configurações BRF</button>
+    <button onclick="switchTab('health', this)">🩺 Status da API</button>
 </nav>
+
 <div class="container">
-    <!-- TAB VALIDAÇÃO -->
+
+    <!-- ── TAB VALIDAÇÃO ── -->
     <div id="tab-validacao" class="tab-content active">
         <div class="card">
-            <h2>Validar Documento</h2>
+            <div class="card-title">📄 Validar Documento</div>
+            <div class="api-url-bar">
+                <span>POST</span>
+                <span id="apiUrlDisplay">/api/validation</span>
+            </div>
             <div class="form-row">
                 <div>
                     <label>Tipo de Documento</label>
                     <select id="tipoDocumento">
                         <option value="CNH">CNH — Carteira Nacional de Habilitação</option>
                         <option value="ASO">ASO — Atestado de Saúde Ocupacional</option>
-                        <option value="DIRECAO_DEFENSIVA">Direção Defensiva / Preventiva</option>
-                        <option value="RG">RG — Registro Geral</option>
-                        <option value="CPF">CPF</option>
-                        <option value="PASSAPORTE">Passaporte</option>
+                        <option value="DirecaoDefensiva">Direção Defensiva / Preventiva</option>
                     </select>
                 </div>
                 <div>
-                    <label>Arquivo (PDF ou Imagem)</label>
-                    <input type="text" id="fileName" placeholder="Nenhum arquivo selecionado" readonly onclick="document.getElementById('fileInput').click()" style="cursor:pointer">
+                    <label>Arquivo Selecionado</label>
+                    <input type="text" id="fileName" placeholder="Clique na área abaixo para selecionar..." readonly onclick="document.getElementById('fileInput').click()" style="cursor:pointer">
                 </div>
             </div>
             <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
                 <div class="upload-icon">📂</div>
                 <p>Arraste o arquivo aqui ou <strong>clique para selecionar</strong></p>
-                <p style="font-size:0.8rem;margin-top:4px;color:#999">Suporta PDF, PNG, JPG, JPEG (máx. 10MB)</p>
+                <p style="font-size:0.8rem;margin-top:6px;color:#9ca3af">Suporta PDF, PNG, JPG, JPEG (máx. 10 MB)</p>
+                <div class="file-selected" id="fileSelected">📎 <span id="fileSelectedName"></span></div>
                 <img id="preview" alt="Preview">
             </div>
             <input type="file" id="fileInput" accept=".pdf,.png,.jpg,.jpeg">
             <button class="btn-primary" id="btnValidar" onclick="validarDocumento()">🔍 Validar Documento</button>
         </div>
+
         <div class="loading" id="loading">
             <div class="spinner"></div>
-            <p>Processando documento com OCR...</p>
+            <p>Processando com OCR — pode levar até 30 segundos para PDFs...</p>
         </div>
+
         <div class="result-card" id="resultCard">
             <div class="status-badge" id="statusBadge"></div>
             <div class="conf-wrap">
@@ -130,35 +349,49 @@
             </div>
             <div class="dados-grid" id="dadosGrid"></div>
             <div class="motivos">
-                <h4>Motivos da Decisão:</h4>
+                <h4>Motivos da Decisão</h4>
                 <ul id="motivosList"></ul>
             </div>
         </div>
     </div>
-    <!-- TAB CONFIGURAÇÕES -->
+
+    <!-- ── TAB CONFIGURAÇÕES ── -->
     <div id="tab-config" class="tab-content">
         <div class="card">
-            <h2>⚙️ Configurações — Direção Defensiva</h2>
+            <div class="card-title">⚙️ Configurações — Direção Defensiva BRF</div>
+
+            <div class="escolas-info">
+                <strong>📋 Regra BRF de Escolas Homologadas</strong>
+                Apenas certificados emitidos pelas escolas abaixo são aceitos para credenciamento.
+                SEST SENAT tem regra especial de carga horária mínima de <strong>4h</strong>; demais escolas exigem <strong>8h</strong>.
+            </div>
+
             <div class="cfg-section">
-                <h3>🏫 Escolas Aprovadas</h3>
-                <p style="font-size:0.85rem;color:#666;margin-bottom:12px">Documentos emitidos por escolas não listadas serão <strong>reprovados automaticamente</strong>.</p>
+                <h3>🏫 Escolas Aprovadas BRF</h3>
+                <p style="font-size:0.83rem;color:var(--text2);margin-bottom:12px">Documentos emitidos por escolas não listadas serão <strong>reprovados automaticamente</strong>. Tags em <span style="color:#059669;font-weight:600">verde</span> = regra especial de carga horária.</p>
                 <div class="tag-list" id="escolaList"></div>
                 <div class="add-row">
                     <input type="text" id="novaEscola" placeholder="Nome da escola ou instituição...">
                     <button class="btn-add" onclick="adicionarEscola()">+ Adicionar</button>
                 </div>
             </div>
+
             <div class="cfg-section">
-                <h3>⏱️ Carga Horária Mínima</h3>
-                <p style="font-size:0.85rem;color:#666;margin-bottom:12px">Certificados com carga horária inferior serão reprovados.</p>
+                <h3>⏱️ Carga Horária Mínima Padrão</h3>
+                <p style="font-size:0.83rem;color:var(--text2);margin-bottom:12px">Certificados com carga horária inferior ao mínimo serão reprovados. SEST SENAT usa regra própria de 4h.</p>
                 <div class="horas-row">
                     <input type="number" id="cargaHoraria" min="1" max="200" value="8">
-                    <span style="color:#666;font-size:0.9rem">horas mínimas</span>
-                    <button class="btn-add" onclick="salvarCargaHoraria()">Salvar</button>
+                    <span style="color:var(--text2);font-size:0.9rem">horas mínimas (demais escolas)</span>
+                    <button class="btn-add" onclick="salvarCargaHoraria()">💾 Salvar</button>
+                </div>
+                <div class="horas-info" style="margin-top:12px">
+                    ℹ️ SEST SENAT: mínimo fixo de <strong>4h</strong> (regra BRF especial, não editável via interface)
                 </div>
             </div>
+
             <div class="cfg-section">
                 <h3>📋 Cursos Aceitos</h3>
+                <p style="font-size:0.83rem;color:var(--text2);margin-bottom:12px">Apenas certificados dos cursos listados serão aceitos para credenciamento.</p>
                 <div class="tag-list" id="cursoList"></div>
                 <div class="add-row">
                     <input type="text" id="novoCurso" placeholder="Nome do curso aceito...">
@@ -167,10 +400,51 @@
             </div>
         </div>
     </div>
+
+    <!-- ── TAB HEALTH ── -->
+    <div id="tab-health" class="tab-content">
+        <div class="card">
+            <div class="card-title">🩺 Status da API</div>
+            <div class="health-grid" id="healthGrid">
+                <div class="health-item"><div class="h-label">Status</div><div class="h-val" id="h-status">—</div></div>
+                <div class="health-item"><div class="h-label">Versão</div><div class="h-val" id="h-version">—</div></div>
+                <div class="health-item"><div class="h-label">Timestamp</div><div class="h-val" id="h-time">—</div></div>
+                <div class="health-item"><div class="h-label">Endpoint Base</div><div class="h-val" id="h-url">—</div></div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-title">📡 Endpoints Disponíveis</div>
+            <table style="width:100%;border-collapse:collapse;font-size:0.875rem;">
+                <thead>
+                    <tr style="background:#f9fafb;">
+                        <th style="padding:10px 14px;text-align:left;border-bottom:1px solid var(--border);color:var(--text2);font-size:.78rem;text-transform:uppercase;">Método</th>
+                        <th style="padding:10px 14px;text-align:left;border-bottom:1px solid var(--border);color:var(--text2);font-size:.78rem;text-transform:uppercase;">Endpoint</th>
+                        <th style="padding:10px 14px;text-align:left;border-bottom:1px solid var(--border);color:var(--text2);font-size:.78rem;text-transform:uppercase;">Descrição</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td style="padding:10px 14px;border-bottom:1px solid var(--border);"><span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:4px;font-weight:700;font-size:.78rem;">POST</span></td><td style="padding:10px 14px;border-bottom:1px solid var(--border);font-family:monospace;font-size:.85rem;">/api/validation</td><td style="padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text2);">Valida documento (CNH, ASO, DirecaoDefensiva)</td></tr>
+                    <tr><td style="padding:10px 14px;border-bottom:1px solid var(--border);"><span style="background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:4px;font-weight:700;font-size:.78rem;">GET</span></td><td style="padding:10px 14px;border-bottom:1px solid var(--border);font-family:monospace;font-size:.85rem;">/api/validation/health</td><td style="padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text2);">Status e versão do serviço</td></tr>
+                    <tr><td style="padding:10px 14px;border-bottom:1px solid var(--border);"><span style="background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:4px;font-weight:700;font-size:.78rem;">GET</span></td><td style="padding:10px 14px;border-bottom:1px solid var(--border);font-family:monospace;font-size:.85rem;">/api/validation/config/direcao-defensiva</td><td style="padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text2);">Configuração atual (escolas, cursos, carga horária)</td></tr>
+                    <tr><td style="padding:10px 14px;border-bottom:1px solid var(--border);"><span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:4px;font-weight:700;font-size:.78rem;">POST</span></td><td style="padding:10px 14px;border-bottom:1px solid var(--border);font-family:monospace;font-size:.85rem;">/api/validation/config/direcao-defensiva/escolas</td><td style="padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text2);">Adiciona escola à lista</td></tr>
+                    <tr><td style="padding:10px 14px;border-bottom:1px solid var(--border);"><span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:4px;font-weight:700;font-size:.78rem;">DELETE</span></td><td style="padding:10px 14px;border-bottom:1px solid var(--border);font-family:monospace;font-size:.85rem;">/api/validation/config/direcao-defensiva/escolas/{nome}</td><td style="padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text2);">Remove escola da lista</td></tr>
+                    <tr><td style="padding:10px 14px;"><span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:4px;font-weight:700;font-size:.78rem;">PUT</span></td><td style="padding:10px 14px;font-family:monospace;font-size:.85rem;">/api/validation/config/direcao-defensiva/carga-horaria/{horas}</td><td style="padding:10px 14px;color:var(--text2);">Atualiza carga horária mínima</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
 </div>
+
 <div class="toast" id="toast"></div>
+
 <script>
 var API = '';
+
+// ── INIT ──
+document.addEventListener('DOMContentLoaded', function() {
+    checkHealth();
+});
 
 function switchTab(tab, btn) {
     document.querySelectorAll('.tab-content').forEach(function(t) { t.classList.remove('active'); });
@@ -178,8 +452,10 @@ function switchTab(tab, btn) {
     document.getElementById('tab-' + tab).classList.add('active');
     btn.classList.add('active');
     if (tab === 'config') loadConfig();
+    if (tab === 'health') checkHealth();
 }
 
+// ── UPLOAD ──
 var uploadArea = document.getElementById('uploadArea');
 var fileInput = document.getElementById('fileInput');
 
@@ -193,6 +469,8 @@ fileInput.addEventListener('change', function() { if (fileInput.files[0]) handle
 
 function handleFile(file) {
     document.getElementById('fileName').value = file.name;
+    document.getElementById('fileSelectedName').textContent = file.name + ' (' + (file.size / 1024).toFixed(0) + ' KB)';
+    document.getElementById('fileSelected').style.display = 'block';
     var preview = document.getElementById('preview');
     if (file.type.startsWith('image/')) {
         var reader = new FileReader();
@@ -210,9 +488,10 @@ function toBase64(file) {
     });
 }
 
+// ── VALIDAÇÃO ──
 async function validarDocumento() {
     var file = fileInput.files[0];
-    if (!file) { showToast('Selecione um arquivo primeiro'); return; }
+    if (!file) { showToast('⚠️ Selecione um arquivo primeiro'); return; }
     document.getElementById('loading').style.display = 'block';
     document.getElementById('resultCard').style.display = 'none';
     document.getElementById('btnValidar').disabled = true;
@@ -224,10 +503,11 @@ async function validarDocumento() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ tipoDocumento: tipo, base64Arquivo: base64 })
         });
-        if (!res.ok) throw new Error('Erro na API: ' + res.status);
+        if (!res.ok) throw new Error('Erro HTTP ' + res.status);
         renderResult(await res.json());
-    } catch (err) { showToast('Erro: ' + err.message); }
-    finally {
+    } catch (err) {
+        showToast('❌ Erro: ' + err.message);
+    } finally {
         document.getElementById('loading').style.display = 'none';
         document.getElementById('btnValidar').disabled = false;
     }
@@ -235,43 +515,47 @@ async function validarDocumento() {
 
 function renderResult(data) {
     var card = document.getElementById('resultCard');
+    var statusNorm = (data.status || 'REPROVADO').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
     var statusMap = { 'APROVADO': 'aprovado', 'ANALISE MANUAL': 'manual', 'REPROVADO': 'reprovado' };
-    var iconMap = { 'APROVADO': '✅', 'ANALISE MANUAL': '⚠️', 'REPROVADO': '❌' };
-    var st = data.status || 'REPROVADO';
-    var stKey = st.replace('Á', 'A').replace('É', 'E').replace('Ê', 'E');
-    var cls = statusMap[stKey] || 'reprovado';
-    var icon = iconMap[stKey] || '❌';
+    var iconMap   = { 'APROVADO': '✅ APROVADO', 'ANALISE MANUAL': '⚠️ ANÁLISE MANUAL', 'REPROVADO': '❌ REPROVADO' };
+    var cls  = statusMap[statusNorm] || 'reprovado';
+    var icon = iconMap[statusNorm]  || '❌ ' + (data.status || 'REPROVADO');
     card.className = 'result-card ' + cls;
-    document.getElementById('statusBadge').innerHTML = icon + ' ' + st;
+    document.getElementById('statusBadge').textContent = icon;
+
     var conf = Math.round(data.confianca || 0);
     document.getElementById('confValue').textContent = conf + '%';
     setTimeout(function() { document.getElementById('confFill').style.width = conf + '%'; }, 100);
+
     var grid = document.getElementById('dadosGrid');
     grid.innerHTML = '';
     var d = data.dadosExtraidos || {};
     var campos = [
-        { label: 'Nome', value: d.nome },
-        { label: 'Validade', value: d.validade },
-        { label: 'Número / CPF', value: d.numeroDocumento },
-        { label: 'Resultado', value: d.resultado },
-        { label: 'Escola', value: d.escola },
-        { label: 'Curso', value: d.nomeCurso },
+        { label: 'Nome',          value: d.nome },
+        { label: 'Validade',      value: d.validade },
+        { label: 'Nº Documento',  value: d.numeroDocumento },
+        { label: 'Resultado',     value: d.resultado },
+        { label: 'Escola',        value: d.escola,        extra: d.escolaAprovada !== undefined ? (d.escolaAprovada ? 'escola-ok' : 'escola-fail') : '' },
+        { label: 'Escola BRF',    value: d.escolaAprovada !== undefined ? (d.escolaAprovada ? '✅ Homologada' : '❌ Não homologada') : null, extra: d.escolaAprovada ? 'escola-ok' : 'escola-fail' },
+        { label: 'Curso',         value: d.nomeCurso },
         { label: 'Carga Horária', value: d.cargaHorariaHoras ? d.cargaHorariaHoras + 'h' : null },
-        { label: 'Período', value: (d.dataInicioCurso && d.dataFimCurso) ? (d.dataInicioCurso + ' a ' + d.dataFimCurso) : null },
+        { label: 'Período',       value: (d.dataInicioCurso && d.dataFimCurso) ? d.dataInicioCurso + ' → ' + d.dataFimCurso : null },
         { label: 'Data Realização', value: d.dataRealizacao },
-        { label: 'Médico', value: d.medico },
-        { label: 'Empresa', value: d.empresa }
+        { label: 'Médico',        value: d.medico },
+        { label: 'CPF',           value: d.cpf },
+        { label: 'Empresa',       value: d.empresa }
     ];
     campos.filter(function(c) { return c.value; }).forEach(function(c) {
-        grid.innerHTML += '<div class="dado-item"><div class="dado-lbl">' + c.label + '</div><div class="dado-val">' + c.value + '</div></div>';
+        grid.innerHTML += '<div class="dado-item"><div class="dado-lbl">' + c.label + '</div><div class="dado-val ' + (c.extra || '') + '">' + c.value + '</div></div>';
     });
-    if (d.textoExtraido) {
-        grid.innerHTML += '<div class="dado-item" style="grid-column:1/-1"><div class="dado-lbl">Texto Extraído</div><div class="dado-val" style="font-size:0.8rem;font-weight:400;white-space:pre-wrap">' + d.textoExtraido + '</div></div>';
-    }
-    document.getElementById('motivosList').innerHTML = (data.motivos || []).map(function(m) { return '<li>' + m + '</li>'; }).join('');
+
+    document.getElementById('motivosList').innerHTML = (data.motivos || []).map(function(m) {
+        return '<li>' + m + '</li>';
+    }).join('');
     card.style.display = 'block';
 }
 
+// ── CONFIG ──
 async function loadConfig() {
     try {
         var res = await fetch(API + '/api/validation/config/direcao-defensiva');
@@ -279,18 +563,20 @@ async function loadConfig() {
         renderEscolas(config.escolasAprovadas || []);
         renderCursos(config.cursosAceitos || []);
         document.getElementById('cargaHoraria').value = config.cargaHorariaMinimaHoras || 8;
-    } catch (e) { showToast('Erro ao carregar configurações'); }
+    } catch (e) { showToast('⚠️ Erro ao carregar configurações'); }
 }
 
 function renderEscolas(lista) {
+    var sest = ['SEST', 'SENAT'];
     document.getElementById('escolaList').innerHTML = lista.map(function(e) {
-        return '<span class="tag">' + e + ' <button onclick="removerEscola(\'' + e.replace(/\'/g, "\\'") + '\')">x</button></span>';
+        var isSest = sest.some(function(s) { return e.toUpperCase().indexOf(s) !== -1; });
+        return '<span class="tag' + (isSest ? ' sest' : '') + '">' + e + (isSest ? ' <small>(4h)</small>' : '') + ' <button onclick="removerEscola(\'' + e.replace(/\'/g, "\\'") + '\')">×</button></span>';
     }).join('');
 }
 
 function renderCursos(lista) {
     document.getElementById('cursoList').innerHTML = lista.map(function(c) {
-        return '<span class="tag">' + c + ' <button onclick="removerCurso(\'' + c.replace(/\'/g, "\\'") + '\')">x</button></span>';
+        return '<span class="tag">' + c + ' <button onclick="removerCurso(\'' + c.replace(/\'/g, "\\'") + '\')">×</button></span>';
     }).join('');
 }
 
@@ -301,18 +587,18 @@ async function adicionarEscola() {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(val)
     });
     document.getElementById('novaEscola').value = '';
-    loadConfig(); showToast('Escola adicionada!');
+    loadConfig(); showToast('✅ Escola adicionada!');
 }
 
 async function removerEscola(escola) {
     await fetch(API + '/api/validation/config/direcao-defensiva/escolas/' + encodeURIComponent(escola), { method: 'DELETE' });
-    loadConfig(); showToast('Escola removida');
+    loadConfig(); showToast('🗑️ Escola removida');
 }
 
 async function salvarCargaHoraria() {
     var horas = document.getElementById('cargaHoraria').value;
     await fetch(API + '/api/validation/config/direcao-defensiva/carga-horaria/' + horas, { method: 'PUT' });
-    showToast('Carga horária mínima salva: ' + horas + 'h');
+    showToast('💾 Carga horária mínima salva: ' + horas + 'h');
 }
 
 async function adicionarCurso() {
@@ -326,7 +612,7 @@ async function adicionarCurso() {
         method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(config)
     });
     document.getElementById('novoCurso').value = '';
-    loadConfig(); showToast('Curso adicionado!');
+    loadConfig(); showToast('✅ Curso adicionado!');
 }
 
 async function removerCurso(curso) {
@@ -336,7 +622,29 @@ async function removerCurso(curso) {
     await fetch(API + '/api/validation/config/direcao-defensiva', {
         method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(config)
     });
-    loadConfig(); showToast('Curso removido');
+    loadConfig(); showToast('🗑️ Curso removido');
+}
+
+// ── HEALTH ──
+async function checkHealth() {
+    try {
+        var res = await fetch(API + '/api/validation/health');
+        var data = await res.json();
+        document.getElementById('statusDot').style.background = '#22c55e';
+        document.getElementById('statusText').textContent = 'API Online';
+        document.getElementById('h-status').textContent = data.status || 'OK';
+        document.getElementById('h-status').className = 'h-val ok';
+        document.getElementById('h-version').textContent = data.version || '—';
+        document.getElementById('h-time').textContent = data.timestamp ? new Date(data.timestamp).toLocaleString('pt-BR') : '—';
+        document.getElementById('h-url').textContent = window.location.origin;
+        document.getElementById('apiUrlDisplay').textContent = window.location.origin + '/api/validation';
+    } catch (e) {
+        document.getElementById('statusDot').style.background = '#ef4444';
+        document.getElementById('statusText').textContent = 'API Offline';
+        document.getElementById('h-status').textContent = 'OFFLINE';
+        document.getElementById('h-status').className = 'h-val';
+        document.getElementById('h-status').style.color = '#dc2626';
+    }
 }
 
 function showToast(msg) {
