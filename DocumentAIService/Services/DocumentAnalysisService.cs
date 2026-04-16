@@ -151,6 +151,21 @@ public class DocumentAnalysisService : IDocumentAnalysisService
         bool isCnh = Regex.IsMatch(text,
             @"CARTEIRA\s+NACIONAL\s+DE\s+HABILI|DRIVER\s+LICENSE|HABILITACAO|HABILITAÇÃO|SENATRAN|SERPRO|DETRAN|MINISTÉRIO\s+DOS\s+TRANSPORTES|MINISTÉRIO\s+DA\s+INFRAESTRUTURA|PERMISO\s+DE\s+CONDUCCION|RENACH|Renach",
             RegexOptions.IgnoreCase);
+
+        // Verificar se o documento é claramente um documento diferente (fatura, nota fiscal, etc.)
+        bool isDocumentoErrado = Regex.IsMatch(text,
+            @"NOTA\s+FISCAL|DANFE|FATURA\s+DE\s+ENERGIA|ENERGIA\s+ELÉTRICA|ENERGIA\s+ELETRICA|COPEL|CEMIG|LIGHT|ENEL|CPFL|ELEKTRO|COELBA|CELPE|CELESC|NEOENERGIA|VENCIMENTO|VALOR\s+A\s+PAGAR|CONSUMO\s+FATURADO|kWh|INSC\.?\s+ESTADUAL|CNPJ.*DISTRIBUIÇÃO|DISTRIBUIDORA\s+DE\s+ENERGIA",
+            RegexOptions.IgnoreCase);
+
+        if (isDocumentoErrado)
+        {
+            response.Status = "REPROVADO";
+            response.Confianca = 0;
+            response.Motivos.Add("✗ Documento não é uma CNH — parece ser uma fatura ou nota fiscal");
+            response.Motivos.Add("✗ Envie a Carteira Nacional de Habilitação (CNH) do motorista");
+            return Task.FromResult(0.0);
+        }
+
         if (isCnh)
         {
             score += 5;
@@ -308,24 +323,38 @@ public class DocumentAnalysisService : IDocumentAnalysisService
     private string? ExtractNameFromMrz(string text)
     {
         // Padrão MRZ linha 3: sequência de letras maiúsculas e "<"
-        // Ex: LEONARDO<<VIEIRA<SILVA<<<<<<<<<<<<
+        // Ex: JEAN<<PAULO<PINTRO<<<<<<<<<<<<
+        // Ex com ruído OCR: JEAN<<PAULO<SPINTRO (S extra antes do sobrenome)
+        // Tentar primeiro o padrão com "<<" (separador nome/sobrenome)
         var mrzMatch = Regex.Match(text,
-            @"([A-Z]{2,}<<[A-Z]{2,}(?:<[A-Z]{2,})*<*)",
+            @"([A-Z]{2,}<{1,2}[A-Z]{2,}(?:<+[A-Z]{2,})*<*)",
             RegexOptions.Multiline);
 
         if (!mrzMatch.Success) return null;
 
-        var mrzLine = mrzMatch.Value;
-        // Separar sobrenome e nome pelo "<<"
-        var parts = mrzLine.TrimEnd('<').Split("<<", StringSplitOptions.RemoveEmptyEntries);
+        var mrzLine = mrzMatch.Value.TrimEnd('<');
+
+        // Tentar separar pelo "<<" primeiro
+        string[] parts;
+        if (mrzLine.Contains("<<"))
+        {
+            parts = mrzLine.Split("<<", StringSplitOptions.RemoveEmptyEntries);
+        }
+        else
+        {
+            // Fallback: separar pelo "<" simples
+            parts = mrzLine.Split('<', StringSplitOptions.RemoveEmptyEntries);
+        }
+
         if (parts.Length < 2) return null;
 
-        // Montar nome completo: NOME SOBRENOME (ordem brasileira)
-        var nomes = parts[0].Replace("<", " ").Trim(); // primeiro bloco = sobrenome
-        var sobrenome = string.Join(" ", parts.Skip(1).Select(p => p.Replace("<", " ").Trim()));
+        // Na MRZ brasileira: primeiro bloco = nome, demais = sobrenome
+        var primeiroBloco = parts[0].Replace("<", " ").Trim();
+        var demaisBlocos = string.Join(" ", parts.Skip(1)
+            .Select(p => p.Replace("<", " ").Trim())
+            .Where(p => p.Length >= 2));
 
-        // Na MRZ brasileira: primeiro bloco = nome, segundo = sobrenome
-        var nomeCompleto = $"{nomes} {sobrenome}".Trim();
+        var nomeCompleto = $"{primeiroBloco} {demaisBlocos}".Trim();
         nomeCompleto = Regex.Replace(nomeCompleto, @"\s+", " ").Trim();
 
         if (IsValidName(nomeCompleto)) return nomeCompleto;
@@ -452,39 +481,87 @@ public class DocumentAnalysisService : IDocumentAnalysisService
         }
 
         // 4. Extrair resultado (Apto/Inapto)
-        var aptoPatterns = new[]
-        {
-            @"Apto\s+para\s+(?:a\s+)?Fun[cç][aã]o\s+que\s+Exerce",
-            @"Apto\s+para\s+(?:a\s+)?Fun[cç][aã]o\s+que\s+Exerceu",
-            @"\bApto\b",
-            @"\bInapto\b",
-            @"Apto\s+com\s+restri",
-            @"\bpto\b.*[Aa]pto",
-        };
+        // Estratégia robusta: detectar qual opção está marcada com base em posição e contexto.
+        // Documentos modernos listam "APTO   INAPTO" na mesma linha — o marcado vem primeiro
+        // ou tem indicador visual (número, símbolo, checkbox) antes dele.
         bool aptoFound = false;
-        foreach (var p in aptoPatterns)
+        bool isApto = false;
+
+        // Padrão 1: texto explícito "Apto para a função"
+        if (Regex.IsMatch(text, @"Apto\s+para\s+(?:a\s+)?Fun[cç][aã]o", RegexOptions.IgnoreCase))
         {
-            var m = Regex.Match(text, p, RegexOptions.IgnoreCase);
-            if (m.Success)
+            dados.Resultado = "APTO";
+            aptoFound = true;
+            isApto = true;
+        }
+        // Padrão 2: indicador visual/numérico antes de APTO: "(X) APTO", "174) APTO", "174 APTO", "✓ APTO"
+        // Nota: OCR pode ler "174)" (com parêntese) ou "174 " (com espaço) antes de APTO
+        else if (Regex.IsMatch(text, @"(?:\(\s*[xX✓✔174\d]+\s*\)|\[\s*[xX✓✔174\d]+\s*\]|[✓✔]|174[)\s]|\b174\b)\s*APTO", RegexOptions.IgnoreCase))
+        {
+            dados.Resultado = "APTO";
+            aptoFound = true;
+            isApto = true;
+        }
+        // Padrão 3a: linha com "APTO INAPTO" (ordem normal) — APTO marcado por padrão
+        else if (Regex.IsMatch(text, @"APTO\s+INAPTO", RegexOptions.IgnoreCase))
+        {
+            bool inaptoMarcado = Regex.IsMatch(text, @"(?:\(\s*[xX✓✔\d]+\s*\)|[✓✔])\s*INAPTO", RegexOptions.IgnoreCase);
+            dados.Resultado = inaptoMarcado ? "INAPTO" : "APTO";
+            aptoFound = true;
+            isApto = !inaptoMarcado;
+        }
+        // Padrão 3b: OCR PSM=3 pode inverter a ordem para "INAPTO APTO" em layouts tabulares
+        // Nesse caso, verificar se há indicador numérico (174) associado ao APTO
+        else if (Regex.IsMatch(text, @"INAPTO.{0,20}APTO", RegexOptions.IgnoreCase | RegexOptions.Singleline))
+        {
+            // Se há indicador numérico antes do APTO (mesmo que INAPTO apareça antes no texto)
+            bool aptoComIndicador = Regex.IsMatch(text, @"174[)\s].{0,5}APTO|\(\s*[xX✓✔\d]+\s*\).{0,5}APTO", RegexOptions.IgnoreCase);
+            bool inaptoComIndicador = Regex.IsMatch(text, @"(?:\(\s*[xX✓✔\d]+\s*\)|[✓✔])\s*INAPTO", RegexOptions.IgnoreCase);
+            if (aptoComIndicador && !inaptoComIndicador)
             {
-                dados.Resultado = m.Value.Trim();
+                dados.Resultado = "APTO";
                 aptoFound = true;
-                bool isApto = !Regex.IsMatch(dados.Resultado, @"Inapto", RegexOptions.IgnoreCase);
-                if (isApto)
-                {
-                    score += 20;
-                    response.Motivos.Add($"✓ Resultado: {dados.Resultado}");
-                }
-                else
-                {
-                    score -= 20;
-                    response.Motivos.Add($"✗ Resultado: {dados.Resultado} — trabalhador não está apto");
-                    response.Status = "REPROVADO";
-                }
-                break;
+                isApto = true;
+            }
+            else if (inaptoComIndicador)
+            {
+                dados.Resultado = "INAPTO";
+                aptoFound = true;
+                isApto = false;
+            }
+            // Se não há indicador claro, marcar para análise manual
+        }
+        // Padrão 4: só INAPTO sem APTO no texto
+        else if (Regex.IsMatch(text, @"\bINAPTO\b", RegexOptions.IgnoreCase) &&
+                 !Regex.IsMatch(text, @"\bAPTO\b", RegexOptions.IgnoreCase))
+        {
+            dados.Resultado = "INAPTO";
+            aptoFound = true;
+            isApto = false;
+        }
+        // Padrão 5: só APTO no texto
+        else if (Regex.IsMatch(text, @"\bAPTO\b", RegexOptions.IgnoreCase))
+        {
+            dados.Resultado = "APTO";
+            aptoFound = true;
+            isApto = true;
+        }
+
+        if (aptoFound)
+        {
+            if (isApto)
+            {
+                score += 20;
+                response.Motivos.Add($"✓ Resultado: {dados.Resultado}");
+            }
+            else
+            {
+                score -= 20;
+                response.Motivos.Add($"✗ Resultado: {dados.Resultado} — trabalhador não está apto");
+                response.Status = "REPROVADO";
             }
         }
-        if (!aptoFound)
+        else
         {
             response.Motivos.Add("⚠ Resultado (Apto/Inapto) não encontrado");
             score -= 10;
@@ -576,6 +653,8 @@ public class DocumentAnalysisService : IDocumentAnalysisService
         {
             // "Nome: NOME COMPLETO" — padrão mais comum
             @"(?:^|\n)\s*Nome\s*[:\-\|]\s*\|?\s*([A-ZÁÉÍÓÚÂÊÔÃÕÇ][A-ZÁÉÍÓÚÂÊÔÃÕÇa-záéíóúâêôãõç\s]{5,60}?)(?:\s*CPF|\s*Idade|\s*Nasc|\s*Fun|\s*\n|\s*\|)",
+            // "Nome Jean Paulo Pintro" (sem dois-pontos, formato InfinityMed e similares)
+            @"(?:^|\n)\s*Nome\s+([A-ZÁÉÍÓÚÂÊÔÃÕÇ][A-ZÁÉÍÓÚÂÊÔÃÕÇa-záéíóúâêôãõç\s]{5,60}?)(?:\s*\n|\s*CPF|\s*Nasc|\s*Fun|\s*$)",
             // Tolerante a ruído: "Nome: JLuzcaRLOS..." → limpar e normalizar
             @"(?:^|\n)\s*[Nn]ome\s*[:\-\|]\s*([^\n\r]{5,60}?)(?:\s*CPF|\s*Idade|\s*Nasc|\s*Fun|\s*\n|\s*\||\s*$)",
             // "Funcionário: NOME COMPLETO"

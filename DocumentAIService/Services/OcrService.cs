@@ -23,20 +23,33 @@ public class OcrService : IOcrService
     {
         try
         {
-            // Estratégia 1: original, PSM=3, português
-            var t1 = await TryOcr(imageData, "por", 3);
-            if (IsGoodText(t1) && !IsInvertedText(t1)) return (t1, 0.85);
+            // Estratégia 1: tentar PSM=6 e PSM=3 e combinar os resultados
+            // PSM=6 é melhor para layouts uniformes (ASO, certificados)
+            // PSM=3 é melhor para layouts complexos (CNH, MRZ)
+            var t6 = await TryOcr(imageData, "por", 6);
+            var t3 = await TryOcr(imageData, "por", 3);
 
-            // Estratégia 2: original, PSM=6, português
-            var t2 = await TryOcr(imageData, "por", 6);
-            if (IsGoodText(t2) && !IsInvertedText(t2)) return (t2, 0.85);
+            bool t6Good = IsGoodText(t6) && !IsInvertedText(t6);
+            bool t3Good = IsGoodText(t3) && !IsInvertedText(t3);
+
+            if (t6Good && t3Good)
+            {
+                // Combinar: usar PSM=6 como base e adicionar conteúdo único do PSM=3
+                // (especialmente útil para MRZ que PSM=3 lê melhor)
+                var combined = t6 + "\n" + t3;
+                return (combined, 0.85);
+            }
+            if (t6Good) return (t6, 0.85);
+            if (t3Good) return (t3, 0.85);
+
+            // Fallback: continuar com estratégias de rotação
 
             // Estratégia 3: rotação 90° (documentos deitados)
             var rotated90 = await TransformImage(imageData, scale: 1.0f, contrast: 1.0f, rotate: 90);
             if (rotated90 != null)
             {
-                var t3 = await TryOcr(rotated90, "por", 3);
-                if (IsGoodText(t3) && !IsInvertedText(t3)) return (t3, 0.80);
+                var tR90 = await TryOcr(rotated90, "por", 3);
+                if (IsGoodText(tR90) && !IsInvertedText(tR90)) return (tR90, 0.80);
             }
 
             // Estratégia 4: rotação 270° (documentos deitados ao contrário)
@@ -59,11 +72,11 @@ public class OcrService : IOcrService
             var scaled = await TransformImage(imageData, scale: 2.0f, contrast: 1.8f, rotate: 0);
             if (scaled != null)
             {
-                var t6 = await TryOcr(scaled, "por", 6);
-                if (IsGoodText(t6) && !IsInvertedText(t6)) return (t6, 0.80);
+                var tS6 = await TryOcr(scaled, "por", 6);
+                if (IsGoodText(tS6) && !IsInvertedText(tS6)) return (tS6, 0.80);
 
-                var t6b = await TryOcr(scaled, "por", 3);
-                if (IsGoodText(t6b) && !IsInvertedText(t6b)) return (t6b, 0.80);
+                var tS3 = await TryOcr(scaled, "por", 3);
+                if (IsGoodText(tS3) && !IsInvertedText(tS3)) return (tS3, 0.80);
             }
 
             // Estratégia 7: escala 2x + contraste + rotação 180°
@@ -95,8 +108,8 @@ public class OcrService : IOcrService
             if (IsGoodText(t10)) return (t10, 0.65);
 
             // Último recurso: retornar o melhor texto disponível mesmo que invertido
-            if (IsGoodText(t1)) return (t1, 0.50);
-            if (IsGoodText(t2)) return (t2, 0.50);
+            if (IsGoodText(t6)) return (t6, 0.50);
+            if (IsGoodText(t3)) return (t3, 0.50);
 
             _logger.LogWarning("All OCR attempts failed");
             return (string.Empty, 0);
