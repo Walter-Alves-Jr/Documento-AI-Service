@@ -1,0 +1,13 @@
+**/.git
+**/.gitignore
+**/bin
+**/obj
+**/*.user
+**/*.suo
+**/node_modules
+**/npm-debug.log
+**/Dockerfile*
+**/.dockerignore
+**/README.md
+**/docs
+**/integration
