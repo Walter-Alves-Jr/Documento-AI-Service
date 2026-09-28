@@ -473,7 +473,7 @@
           <button class="tipo-btn" data-tipo="ASO" onclick="selectTipo(this)">
             <span class="tipo-icon">🩺</span>ASO
           </button>
-          <button class="tipo-btn" data-tipo="DirecaoDefensiva" onclick="selectTipo(this)">
+          <button class="tipo-btn" data-tipo="DIRECAO_DEFENSIVA" onclick="selectTipo(this)">
             <span class="tipo-icon">🚗</span>Dir. Defensiva
           </button>
         </div>
@@ -556,7 +556,7 @@
         </div>
         <div class="api-row">
           <span class="method post">POST</span>
-          <span class="api-path">/api/validation</span>
+          <span class="api-path">/api/v1/validation</span>
           <span class="api-desc">Validar documento</span>
         </div>
         <div class="api-row">
@@ -573,14 +573,16 @@
 
       <div class="sec-label">Corpo da Requisição (POST)</div>
       <div class="pre-box">{
-  "tipoDocumento": "CNH",
-  "base64Arquivo": "JVBERi0xLjQK..."
+  "documentType": "CNH",
+  "policy": "CNH_DEFAULT",
+  "file": "JVBERi0xLjQK..."
 }</div>
 
       <div class="sec-label">Exemplo cURL</div>
-      <div class="pre-box" id="curlBox">curl -s -X POST http://localhost:5000/api/validation \
+      <div class="pre-box" id="curlBox">curl -s -X POST http://localhost:5000/api/v1/validation \
   -H "Content-Type: application/json" \
-  -d '{"tipoDocumento":"CNH","base64Arquivo":"$(base64 -w0 arquivo.pdf)"}'</div>
+  -H "X-API-Key: SUA_CHAVE_DE_API" \
+  -d '{"documentType":"CNH","policy":"CNH_DEFAULT","file":"$(base64 -w0 arquivo.pdf)"}'</div>
 
       <div class="sec-label">Escolas BRF Homologadas</div>
       <div class="escolas-wrap" id="escolasWrap"></div>
@@ -602,6 +604,7 @@
   let fileB64 = null;
   let fileName = null;
   let hist = [];
+  const POLICIES = { CNH: 'CNH_DEFAULT', ASO: 'ASO_DEFAULT', DIRECAO_DEFENSIVA: 'DIRECAO_DEFENSIVA_DEFAULT' };
 
   // ── Init ────────────────────────────────────────────────────────────────────
   document.addEventListener('DOMContentLoaded', () => {
@@ -610,7 +613,7 @@
     setupDrop();
     document.getElementById('baseUrl').textContent = API;
     document.getElementById('curlBox').textContent =
-      `curl -s -X POST ${API}/api/validation \\\n  -H "Content-Type: application/json" \\\n  -d '{"tipoDocumento":"CNH","base64Arquivo":"$(base64 -w0 arquivo.pdf)"}'`;
+      `curl -s -X POST ${API}/api/v1/validation \\\n  -H "Content-Type: application/json" \\\n  -H "X-API-Key: SUA_CHAVE_DE_API" \\\n  -d '{"documentType":"CNH","policy":"CNH_DEFAULT","file":"$(base64 -w0 arquivo.pdf)"}'`;
   });
 
   function checkHealth() {
@@ -689,15 +692,19 @@
   // ── Validação ────────────────────────────────────────────────────────────────
   async function doValidate() {
     if (!fileB64) return;
+    const apiKey = window.sessionStorage.getItem('dvsApiKey') || window.prompt('Informe a chave de API de ambiente de teste:');
+    if (!apiKey) return;
+    window.sessionStorage.setItem('dvsApiKey', apiKey);
     const btn = document.getElementById('btnSubmit');
     btn.classList.add('loading'); btn.disabled = true;
     try {
-      const res = await fetch(`${API}/api/validation`, {
+      const res = await fetch(`${API}/api/v1/validation`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tipoDocumento: tipo, base64Arquivo: fileB64 })
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
+        body: JSON.stringify({ documentType: tipo, policy: POLICIES[tipo], file: fileB64 })
       });
       const data = await res.json();
+      if (!res.ok) throw new Error(data.title || data.error || `HTTP ${res.status}`);
       showResult(data);
       pushHist(data);
     } catch(err) {
@@ -713,7 +720,7 @@
     document.getElementById('rPanel').style.display = 'block';
 
     // Badge
-    const st = (data.status || '').toUpperCase().replace('ANÁLISE','ANALISE');
+    const st = (data.status || '').toUpperCase().replace('ANÁLISE','ANALISE').replace('MANUAL_REVIEW','ANALISE MANUAL').replace('APPROVED','APROVADO').replace('REJECTED','REPROVADO');
     const map = {
       'APROVADO':      { cls:'aprovado', ico:'✅', lbl:'APROVADO' },
       'REPROVADO':     { cls:'reprovado', ico:'❌', lbl:'REPROVADO' },
@@ -724,7 +731,7 @@
       `<div class="status-badge ${s.cls}">${s.ico} ${s.lbl}</div>`;
 
     // Confiança
-    const c = data.confianca || 0;
+    const c = data.confidence !== undefined ? Math.round(data.confidence * 100) : (data.confianca || 0);
     document.getElementById('confPct').textContent = c + '%';
     const bar = document.getElementById('confBar');
     bar.style.width = c + '%';
@@ -732,15 +739,16 @@
 
     // Dados
     const d = data.dadosExtraidos || {};
+    const extracted = Object.fromEntries((data.extractedFields || []).map(x => [x.field, x.value]));
     const campos = [
-      { l:'Nome',          v: d.nome },
-      { l:'Validade',      v: d.validade },
-      { l:'Nº Documento',  v: d.numeroDocumento },
-      { l:'CPF',           v: d.cpf },
-      { l:'Resultado ASO', v: d.resultado },
-      { l:'Escola',        v: d.escola },
-      { l:'Empresa',       v: d.empresa },
-      { l:'Carga Horária', v: d.cargaHoraria },
+      { l:'Nome',          v: extracted.holderName || d.nome },
+      { l:'Validade',      v: extracted.expirationDate || d.validade },
+      { l:'Nº Documento',  v: extracted.documentNumber || d.numeroDocumento },
+      { l:'Resultado ASO', v: extracted.fitnessResult || d.resultado },
+      { l:'Escola',        v: extracted.issuer || d.escola },
+      { l:'Empresa',       v: extracted.employer || d.empresa },
+      { l:'Carga Horária', v: extracted.courseHours || d.cargaHoraria },
+      { l:'Placa',         v: extracted.plate },
     ].filter(x => x.v);
 
     const grid = document.getElementById('dadosGrid');
@@ -763,7 +771,8 @@
     // Motivos
     const box = document.getElementById('motivosBox');
     box.innerHTML = '';
-    (data.motivos || []).forEach(m => {
+    const motivos = data.motivos || (data.validations || []).map(v => `${v.status === 'PASS' ? '✓' : v.status === 'FAIL' ? '✗' : '⚠'} ${v.message}`).concat((data.warnings || []).map(w => `⚠ ${w.message}`));
+    motivos.forEach(m => {
       const ok   = m.startsWith('✓');
       const fail = m.startsWith('✗');
       const cls  = ok ? 'ok' : fail ? 'fail' : 'warn';
@@ -797,8 +806,8 @@
     if (!hist.length) { el.innerHTML = '<div class="hist-empty">Nenhum teste realizado ainda</div>'; return; }
     el.innerHTML = hist.map((h,i) => {
       const st = (h.data.status||'').toUpperCase();
-      const cls = st==='APROVADO' ? 'aprovado' : st==='REPROVADO' ? 'reprovado' : 'manual';
-      const nome = (h.data.dadosExtraidos||{}).nome || h.file;
+      const cls = st==='APROVADO' || st==='APPROVED' ? 'aprovado' : st==='REPROVADO' || st==='REJECTED' ? 'reprovado' : 'manual';
+      const nome = (h.data.extractedFields||[]).find(x => x.field==='holderName')?.value || (h.data.dadosExtraidos||{}).nome || h.file;
       return `<div class="hist-item" onclick="loadHist(${i})">
         <div class="hist-dot ${cls}"></div>
         <span class="hist-name">${esc(nome)}</span>

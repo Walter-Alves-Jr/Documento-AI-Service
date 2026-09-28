@@ -1,0 +1,519 @@
+{
+  "CatalogVersion": "1.0",
+  "DocumentTypes": [
+    {
+      "Id": "0b0ba3f6d70947b090574af4b27a06dd",
+      "Code": "CNH",
+      "Name": "Carteira Nacional de Habilita\u00E7\u00E3o",
+      "Description": "Documento de habilita\u00E7\u00E3o de condutor.",
+      "Active": true,
+      "Version": "1.0",
+      "IdentificationPatterns": [],
+      "Fields": [
+        {
+          "Code": "holderName",
+          "Name": "Nome do titular",
+          "DataType": "string",
+          "Required": true,
+          "Sensitivity": "personal",
+          "ResponseMode": "mask",
+          "ExtractionPatterns": []
+        },
+        {
+          "Code": "documentNumber",
+          "Name": "N\u00FAmero do documento ou CPF",
+          "DataType": "string",
+          "Required": false,
+          "Sensitivity": "personal",
+          "ResponseMode": "mask",
+          "ExtractionPatterns": []
+        },
+        {
+          "Code": "expirationDate",
+          "Name": "Data de validade",
+          "DataType": "date",
+          "Required": true,
+          "Sensitivity": "personal",
+          "ResponseMode": "show",
+          "ExtractionPatterns": []
+        },
+        {
+          "Code": "category",
+          "Name": "Categoria",
+          "DataType": "string",
+          "Required": false,
+          "Sensitivity": "personal",
+          "ResponseMode": "show",
+          "ExtractionPatterns": []
+        }
+      ]
+    },
+    {
+      "Id": "e0ae10756b7d4fdab7821b51984e6222",
+      "Code": "ASO",
+      "Name": "Atestado de Sa\u00FAde Ocupacional",
+      "Description": "Atestado ocupacional; pode conter dados pessoais sens\u00EDveis.",
+      "Active": true,
+      "Version": "1.0",
+      "IdentificationPatterns": [],
+      "Fields": [
+        {
+          "Code": "holderName",
+          "Name": "Nome do trabalhador",
+          "DataType": "string",
+          "Required": true,
+          "Sensitivity": "sensitive",
+          "ResponseMode": "mask",
+          "ExtractionPatterns": []
+        },
+        {
+          "Code": "documentNumber",
+          "Name": "CPF",
+          "DataType": "string",
+          "Required": false,
+          "Sensitivity": "sensitive",
+          "ResponseMode": "mask",
+          "ExtractionPatterns": []
+        },
+        {
+          "Code": "employer",
+          "Name": "Empresa",
+          "DataType": "string",
+          "Required": false,
+          "Sensitivity": "personal",
+          "ResponseMode": "redact",
+          "ExtractionPatterns": []
+        },
+        {
+          "Code": "fitnessResult",
+          "Name": "Resultado de aptid\u00E3o",
+          "DataType": "string",
+          "Required": true,
+          "Sensitivity": "sensitive",
+          "ResponseMode": "show",
+          "ExtractionPatterns": []
+        },
+        {
+          "Code": "issueDate",
+          "Name": "Data de realiza\u00E7\u00E3o",
+          "DataType": "date",
+          "Required": true,
+          "Sensitivity": "sensitive",
+          "ResponseMode": "show",
+          "ExtractionPatterns": []
+        },
+        {
+          "Code": "expirationDate",
+          "Name": "Validade",
+          "DataType": "date",
+          "Required": true,
+          "Sensitivity": "sensitive",
+          "ResponseMode": "show",
+          "ExtractionPatterns": []
+        },
+        {
+          "Code": "doctorName",
+          "Name": "M\u00E9dico",
+          "DataType": "string",
+          "Required": false,
+          "Sensitivity": "personal",
+          "ResponseMode": "redact",
+          "ExtractionPatterns": []
+        }
+      ]
+    },
+    {
+      "Id": "7ca3fa4132a649ebb9a4d77a25c64684",
+      "Code": "DIRECAO_DEFENSIVA",
+      "Name": "Certificado de Dire\u00E7\u00E3o Defensiva",
+      "Description": "Certificado de treinamento de condutor.",
+      "Active": true,
+      "Version": "1.0",
+      "IdentificationPatterns": [],
+      "Fields": [
+        {
+          "Code": "holderName",
+          "Name": "Nome do aluno",
+          "DataType": "string",
+          "Required": true,
+          "Sensitivity": "personal",
+          "ResponseMode": "mask",
+          "ExtractionPatterns": []
+        },
+        {
+          "Code": "courseName",
+          "Name": "Curso",
+          "DataType": "string",
+          "Required": false,
+          "Sensitivity": "personal",
+          "ResponseMode": "show",
+          "ExtractionPatterns": []
+        },
+        {
+          "Code": "issuer",
+          "Name": "Institui\u00E7\u00E3o emissora",
+          "DataType": "string",
+          "Required": false,
+          "Sensitivity": "personal",
+          "ResponseMode": "show",
+          "ExtractionPatterns": []
+        },
+        {
+          "Code": "issuerApproved",
+          "Name": "Emissor homologado",
+          "DataType": "boolean",
+          "Required": true,
+          "Sensitivity": "internal",
+          "ResponseMode": "show",
+          "ExtractionPatterns": []
+        },
+        {
+          "Code": "courseHours",
+          "Name": "Carga hor\u00E1ria",
+          "DataType": "number",
+          "Required": false,
+          "Sensitivity": "personal",
+          "ResponseMode": "show",
+          "ExtractionPatterns": []
+        },
+        {
+          "Code": "completionDate",
+          "Name": "Conclus\u00E3o",
+          "DataType": "date",
+          "Required": true,
+          "Sensitivity": "personal",
+          "ResponseMode": "show",
+          "ExtractionPatterns": []
+        },
+        {
+          "Code": "expirationDate",
+          "Name": "Validade",
+          "DataType": "date",
+          "Required": true,
+          "Sensitivity": "personal",
+          "ResponseMode": "show",
+          "ExtractionPatterns": []
+        }
+      ]
+    },
+    {
+      "Id": "1187550a21114b9d803ac84ad2232afe",
+      "Code": "CIPP",
+      "Name": "Certificado de Inspe\u00E7\u00E3o para o Transporte de Produtos Perigosos",
+      "Description": "Exemplo de tipo cadastrado sem cria\u00E7\u00E3o de controller.",
+      "Active": true,
+      "Version": "1.0",
+      "IdentificationPatterns": [
+        "CERTIFICADO\\s\u002BDE\\s\u002BINSPECAO"
+      ],
+      "Fields": [
+        {
+          "Code": "plate",
+          "Name": "Placa",
+          "DataType": "string",
+          "Required": true,
+          "Sensitivity": "personal",
+          "ResponseMode": "show",
+          "ExtractionPatterns": [
+            "PLACA\\s*[:#]?\\s*([A-Z]{3}[- ]?\\d[A-Z0-9]\\d{2})"
+          ]
+        },
+        {
+          "Code": "certificateNumber",
+          "Name": "N\u00FAmero do certificado",
+          "DataType": "string",
+          "Required": false,
+          "Sensitivity": "personal",
+          "ResponseMode": "mask",
+          "ExtractionPatterns": [
+            "CERTIFICADO\\s*(?:N[O\u00BA.]*)?\\s*[:#]?\\s*([A-Z0-9-]{5,})"
+          ]
+        },
+        {
+          "Code": "expirationDate",
+          "Name": "Validade",
+          "DataType": "date",
+          "Required": true,
+          "Sensitivity": "personal",
+          "ResponseMode": "show",
+          "ExtractionPatterns": [
+            "VALIDADE\\s*[:#]?\\s*(\\d{2}/\\d{2}/\\d{4})"
+          ]
+        }
+      ]
+    }
+  ],
+  "Policies": [
+    {
+      "Id": "236e7b76b3f942ba90b63131347046e2",
+      "Code": "CNH_DEFAULT",
+      "Name": "CNH padr\u00E3o",
+      "Description": "Equival\u00EAncia funcional \u00E0 valida\u00E7\u00E3o atual de CNH.",
+      "DocumentType": "CNH",
+      "Version": "1.0",
+      "Active": true,
+      "MinimumConfidence": 0.5,
+      "Rules": [
+        {
+          "Code": "DOCUMENT_TYPE",
+          "Name": "Tipo CNH",
+          "RuleType": "document_type",
+          "Field": null,
+          "ContextKey": null,
+          "Severity": "reject",
+          "UnknownOutcome": "reject",
+          "ExpectedValue": "CNH",
+          "Parameters": null
+        },
+        {
+          "Code": "HOLDER_NAME",
+          "Name": "Nome identificado",
+          "RuleType": "exists",
+          "Field": "holderName",
+          "ContextKey": null,
+          "Severity": "manual",
+          "UnknownOutcome": "manual_review",
+          "ExpectedValue": null,
+          "Parameters": null
+        },
+        {
+          "Code": "EXPIRATION",
+          "Name": "CNH vigente",
+          "RuleType": "date_not_expired",
+          "Field": "expirationDate",
+          "ContextKey": null,
+          "Severity": "reject",
+          "UnknownOutcome": "manual_review",
+          "ExpectedValue": null,
+          "Parameters": null
+        }
+      ]
+    },
+    {
+      "Id": "fce39761fce34876852d3b180cf45545",
+      "Code": "CNH_TRANSPORTE_PRODUTO_PERIGOSO",
+      "Name": "CNH para transporte de produto perigoso",
+      "Description": "Exemplo de pol\u00EDtica reutiliz\u00E1vel que requer categoria C, D ou E.",
+      "DocumentType": "CNH",
+      "Version": "1.0",
+      "Active": true,
+      "MinimumConfidence": 0.5,
+      "Rules": [
+        {
+          "Code": "DOCUMENT_TYPE",
+          "Name": "Tipo CNH",
+          "RuleType": "document_type",
+          "Field": null,
+          "ContextKey": null,
+          "Severity": "reject",
+          "UnknownOutcome": "reject",
+          "ExpectedValue": "CNH",
+          "Parameters": null
+        },
+        {
+          "Code": "EXPIRATION",
+          "Name": "CNH vigente",
+          "RuleType": "date_not_expired",
+          "Field": "expirationDate",
+          "ContextKey": null,
+          "Severity": "reject",
+          "UnknownOutcome": "manual_review",
+          "ExpectedValue": null,
+          "Parameters": null
+        },
+        {
+          "Code": "DRIVER_CATEGORY",
+          "Name": "Categoria permitida",
+          "RuleType": "in",
+          "Field": "category",
+          "ContextKey": null,
+          "Severity": "manual",
+          "UnknownOutcome": "manual_review",
+          "ExpectedValue": [
+            "C",
+            "D",
+            "E"
+          ],
+          "Parameters": null
+        }
+      ]
+    },
+    {
+      "Id": "e8dc15f092114854b0e4f02971449817",
+      "Code": "ASO_DEFAULT",
+      "Name": "ASO padr\u00E3o",
+      "Description": "Equival\u00EAncia funcional \u00E0 valida\u00E7\u00E3o atual de ASO.",
+      "DocumentType": "ASO",
+      "Version": "1.0",
+      "Active": true,
+      "MinimumConfidence": 0.5,
+      "Rules": [
+        {
+          "Code": "DOCUMENT_TYPE",
+          "Name": "Tipo ASO",
+          "RuleType": "document_type",
+          "Field": null,
+          "ContextKey": null,
+          "Severity": "reject",
+          "UnknownOutcome": "reject",
+          "ExpectedValue": "ASO",
+          "Parameters": null
+        },
+        {
+          "Code": "HOLDER_NAME",
+          "Name": "Nome identificado",
+          "RuleType": "exists",
+          "Field": "holderName",
+          "ContextKey": null,
+          "Severity": "manual",
+          "UnknownOutcome": "manual_review",
+          "ExpectedValue": null,
+          "Parameters": null
+        },
+        {
+          "Code": "FITNESS",
+          "Name": "Resultado APTO",
+          "RuleType": "equals",
+          "Field": "fitnessResult",
+          "ContextKey": null,
+          "Severity": "reject",
+          "UnknownOutcome": "manual_review",
+          "ExpectedValue": "APTO",
+          "Parameters": null
+        },
+        {
+          "Code": "EXPIRATION",
+          "Name": "ASO vigente",
+          "RuleType": "date_not_expired",
+          "Field": "expirationDate",
+          "ContextKey": null,
+          "Severity": "reject",
+          "UnknownOutcome": "manual_review",
+          "ExpectedValue": null,
+          "Parameters": null
+        }
+      ]
+    },
+    {
+      "Id": "85f02ff12a73417ea0263e534875ab0f",
+      "Code": "DIRECAO_DEFENSIVA_DEFAULT",
+      "Name": "Dire\u00E7\u00E3o Defensiva padr\u00E3o",
+      "Description": "Equival\u00EAncia funcional \u00E0s regras atuais de treinamento homologado.",
+      "DocumentType": "DIRECAO_DEFENSIVA",
+      "Version": "1.0",
+      "Active": true,
+      "MinimumConfidence": 0.5,
+      "Rules": [
+        {
+          "Code": "DOCUMENT_TYPE",
+          "Name": "Tipo certificado",
+          "RuleType": "document_type",
+          "Field": null,
+          "ContextKey": null,
+          "Severity": "reject",
+          "UnknownOutcome": "reject",
+          "ExpectedValue": "DIRECAO_DEFENSIVA",
+          "Parameters": null
+        },
+        {
+          "Code": "HOLDER_NAME",
+          "Name": "Nome identificado",
+          "RuleType": "exists",
+          "Field": "holderName",
+          "ContextKey": null,
+          "Severity": "manual",
+          "UnknownOutcome": "manual_review",
+          "ExpectedValue": null,
+          "Parameters": null
+        },
+        {
+          "Code": "TRUSTED_ISSUER",
+          "Name": "Emissor homologado",
+          "RuleType": "boolean_true",
+          "Field": "issuerApproved",
+          "ContextKey": null,
+          "Severity": "reject",
+          "UnknownOutcome": "manual_review",
+          "ExpectedValue": null,
+          "Parameters": null
+        },
+        {
+          "Code": "COURSE_HOURS",
+          "Name": "Carga hor\u00E1ria m\u00EDnima",
+          "RuleType": "minimum_by_reference",
+          "Field": "courseHours",
+          "ContextKey": null,
+          "Severity": "reject",
+          "UnknownOutcome": "manual_review",
+          "ExpectedValue": null,
+          "Parameters": {
+            "defaultMinimum": 8,
+            "references": [
+              {
+                "field": "issuer",
+                "contains": "SEST SENAT",
+                "minimum": 4
+              }
+            ]
+          }
+        },
+        {
+          "Code": "EXPIRATION",
+          "Name": "Certificado vigente",
+          "RuleType": "date_not_expired",
+          "Field": "expirationDate",
+          "ContextKey": null,
+          "Severity": "reject",
+          "UnknownOutcome": "manual_review",
+          "ExpectedValue": null,
+          "Parameters": null
+        }
+      ]
+    },
+    {
+      "Id": "b1269534951c4d08aaa23a5f1db5fa91",
+      "Code": "CIPP_DEFAULT",
+      "Name": "CIPP padr\u00E3o",
+      "Description": "Exemplo de pol\u00EDtica configur\u00E1vel para certificado de inspe\u00E7\u00E3o.",
+      "DocumentType": "CIPP",
+      "Version": "1.0",
+      "Active": true,
+      "MinimumConfidence": 0.5,
+      "Rules": [
+        {
+          "Code": "DOCUMENT_TYPE",
+          "Name": "Tipo CIPP",
+          "RuleType": "document_type",
+          "Field": null,
+          "ContextKey": null,
+          "Severity": "reject",
+          "UnknownOutcome": "reject",
+          "ExpectedValue": "CIPP",
+          "Parameters": null
+        },
+        {
+          "Code": "EXPIRATION",
+          "Name": "CIPP vigente",
+          "RuleType": "date_not_expired",
+          "Field": "expirationDate",
+          "ContextKey": null,
+          "Severity": "reject",
+          "UnknownOutcome": "manual_review",
+          "ExpectedValue": null,
+          "Parameters": null
+        },
+        {
+          "Code": "VEHICLE_PLATE",
+          "Name": "Placa corresponde ao contexto",
+          "RuleType": "matches_context",
+          "Field": "plate",
+          "ContextKey": "vehiclePlate",
+          "Severity": "manual",
+          "UnknownOutcome": "manual_review",
+          "ExpectedValue": null,
+          "Parameters": null
+        }
+      ]
+    }
+  ]
+}

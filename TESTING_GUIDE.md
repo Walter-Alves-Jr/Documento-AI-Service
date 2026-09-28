@@ -1,401 +1,114 @@
-# Guia de Testes - Document AI Service
+# Guia de Testes — Document Validation Service v1
 
-## Visão Geral
+A referência de contrato e arquitetura é [DOCUMENT_VALIDATION_SERVICE.md](DOCUMENT_VALIDATION_SERVICE.md). Este guia usa somente documentos sintéticos/autorizados e não deve receber arquivos reais em repositório público.
 
-Este guia fornece instruções detalhadas para testar o protótipo funcional do Document AI Service.
+## Pré-requisitos
 
-## Acesso à Aplicação
-
-### URL Pública
-```
-https://5000-iomtdl8xard50urtz3x4o-2fab9d3c.us2.manus.computer
-```
-
-### URL Local
-```
-http://localhost:5000
-```
-
-## Testes da Interface Web
-
-### Teste 1: Upload e Validação de Documento
-
-**Objetivo**: Validar o fluxo completo de upload e análise
-
-**Passos**:
-1. Acessar http://localhost:5000
-2. Selecionar "CNH - Carteira Nacional de Habilitação" no dropdown
-3. Fazer upload de uma imagem de CNH válida
-4. Clicar em "Validar Documento"
-5. Verificar resultado
-
-**Resultado Esperado**:
-- Status: APROVADO (se documento válido)
-- Confiança: ≥ 85%
-- Dados extraídos: Nome, Validade, Número do documento
-- Motivos: Lista de critérios atendidos
-
-### Teste 2: Documento Expirado
-
-**Objetivo**: Validar tratamento de documentos expirados
-
-**Passos**:
-1. Fazer upload de documento com data de validade expirada
-2. Clicar em "Validar Documento"
-
-**Resultado Esperado**:
-- Status: ANÁLISE MANUAL ou REPROVADO
-- Confiança: 50-84% ou < 50%
-- Motivo: "✗ Documento expirado: DD/MM/YYYY"
-
-### Teste 3: Imagem de Baixa Qualidade
-
-**Objetivo**: Validar tratamento de imagens ruins
-
-**Passos**:
-1. Fazer upload de imagem borrada, pixelada ou com pouco contraste
-2. Clicar em "Validar Documento"
-
-**Resultado Esperado**:
-- Status: ANÁLISE MANUAL
-- Confiança: 50-84%
-- Motivo: Qualidade da imagem baixa
-
-### Teste 4: Arquivo Inválido
-
-**Objetivo**: Validar rejeição de arquivos não suportados
-
-**Passos**:
-1. Tentar fazer upload de arquivo .txt ou .doc
-2. Verificar mensagem de erro
-
-**Resultado Esperado**:
-- Erro: "Formatos suportados: JPG, PNG, PDF"
-
-### Teste 5: Arquivo Muito Grande
-
-**Objetivo**: Validar limite de tamanho
-
-**Passos**:
-1. Tentar fazer upload de arquivo > 5MB
-2. Verificar mensagem de erro
-
-**Resultado Esperado**:
-- Erro: "Arquivo muito grande (máximo 5MB)"
-
-## Testes da API REST
-
-### Teste 1: Health Check
-
-**Requisição**:
 ```bash
-curl http://localhost:5000/api/validation/health
+sudo apt-get install -y tesseract-ocr tesseract-ocr-por tesseract-ocr-eng poppler-utils libgdiplus
+export DocumentValidation__Security__ApiKeys__0__Id=local-admin
+export DocumentValidation__Security__ApiKeys__0__Key='chave-local-de-teste'
+export DocumentValidation__Security__ApiKeys__0__Role=admin
 ```
 
-**Resposta Esperada** (200 OK):
-```json
-{
-  "status": "OK",
-  "timestamp": "2026-03-21T05:27:00.1742807Z"
-}
-```
+Inicie a API:
 
-### Teste 2: Validação com Documento Válido
-
-**Requisição**:
 ```bash
-BASE64=$(base64 -w 0 documento_valido.png)
-curl -X POST http://localhost:5000/api/validation \
-  -H "Content-Type: application/json" \
-  -d "{
-    \"tipoDocumento\": \"CNH\",
-    \"base64Arquivo\": \"$BASE64\"
-  }"
+cd DocumentAIService
+dotnet run --urls http://0.0.0.0:5000
 ```
 
-**Resposta Esperada** (200 OK):
-```json
-{
-  "status": "APROVADO",
-  "confianca": 98,
-  "dadosExtraidos": {
-    "nome": "JOÃO DA SILVA SANTOS",
-    "validade": "15/05/2030",
-    "numeroDocumento": "123.456.789-00",
-    "textoExtraido": "..."
-  },
-  "motivos": [
-    "✓ OCR realizado com sucesso",
-    "✓ Nome encontrado: JOÃO DA SILVA SANTOS",
-    "✓ Documento válido até: 15/05/2030",
-    "✓ Número do documento: 123.456.789-00",
-    "✓ Qualidade da imagem: 85.00 %",
-    "✓ Documento aprovado automaticamente"
-  ]
-}
-```
+## Testes automatizados
 
-### Teste 3: Validação com Base64 Inválido
-
-**Requisição**:
 ```bash
-curl -X POST http://localhost:5000/api/validation \
-  -H "Content-Type: application/json" \
-  -d "{
-    \"tipoDocumento\": \"CNH\",
-    \"base64Arquivo\": \"INVALIDO!!!\"
-  }"
+dotnet test DocumentAIService.Tests/DocumentAIService.Tests.csproj
 ```
 
-**Resposta Esperada** (400 Bad Request):
-```json
-{
-  "error": "base64Arquivo inválido"
-}
-```
+Cobertura atual:
 
-### Teste 4: Validação com Parâmetros Faltando
+| Área | Casos |
+|---|---|
+| Rules Engine | Aprovação, documento vencido, campo ausente/manual review, baixa confiança, mínimo SEST SENAT. |
+| Segurança de arquivo | PDF reconhecido por assinatura; tipo desconhecido rejeitado. |
+| Privacidade | Nome/documento mascarados; campo redigido omitido. |
+| Extensibilidade | CIPP extraído por padrões configurados sem controller novo. |
+| Resiliência | Chave idempotente separada por cliente. |
 
-**Requisição**:
+## Smoke tests HTTP
+
 ```bash
-curl -X POST http://localhost:5000/api/validation \
-  -H "Content-Type: application/json" \
-  -d "{
-    \"tipoDocumento\": \"CNH\"
-  }"
+curl -sS http://localhost:5000/api/validation/health
 ```
 
-**Resposta Esperada** (400 Bad Request):
-```json
-{
-  "error": "tipoDocumento e base64Arquivo são obrigatórios"
-}
-```
+### Autenticação obrigatória
 
-### Teste 5: Arquivo Muito Grande
-
-**Requisição**:
 ```bash
-# Criar arquivo > 5MB
-dd if=/dev/zero bs=1M count=6 | base64 > large_file.txt
-
-curl -X POST http://localhost:5000/api/validation \
-  -H "Content-Type: application/json" \
-  -d "{
-    \"tipoDocumento\": \"CNH\",
-    \"base64Arquivo\": \"$(cat large_file.txt)\"
-  }"
+curl -i -X POST http://localhost:5000/api/v1/validation \
+  -H 'content-type: application/json' \
+  -d '{"documentType":"CNH","policy":"CNH_DEFAULT","file":"JVBERg=="}'
 ```
 
-**Resposta Esperada** (400 Bad Request):
-```json
-{
-  "error": "Arquivo muito grande (máximo 5MB)"
-}
-```
+**Esperado:** `401 Unauthorized`.
 
-## Testes de Performance
+### Assinatura inválida
 
-### Teste 1: Tempo de Resposta
-
-**Objetivo**: Medir tempo de processamento
-
-**Requisição**:
 ```bash
-time curl -X POST http://localhost:5000/api/validation \
-  -H "Content-Type: application/json" \
-  -d "{
-    \"tipoDocumento\": \"CNH\",
-    \"base64Arquivo\": \"$(base64 -w 0 documento.png)\"
-  }"
+curl -sS -X POST http://localhost:5000/api/v1/validation \
+  -H 'content-type: application/json' \
+  -H "x-api-key: $DOCUMENT_VALIDATION_API_KEY" \
+  -d '{"documentType":"CNH","policy":"CNH_DEFAULT","file":"aW52YWxpZA=="}'
 ```
 
-**Resultado Esperado**:
-- Tempo total: 1-3 segundos
-- Tempo de resposta: < 100ms após processamento
+**Esperado:** `400` com código `UNSUPPORTED_FILE_TYPE`.
 
-### Teste 2: Requisições Simultâneas
+### Política CNH
 
-**Objetivo**: Validar comportamento sob carga
-
-**Script**:
 ```bash
-#!/bin/bash
-BASE64=$(base64 -w 0 documento.png)
-
-for i in {1..10}; do
-  curl -X POST http://localhost:5000/api/validation \
-    -H "Content-Type: application/json" \
-    -d "{
-      \"tipoDocumento\": \"CNH\",
-      \"base64Arquivo\": \"$BASE64\"
-    }" &
-done
-
-wait
+BASE64=$(base64 -w0 cnh-sintetica.png)
+curl -sS -X POST http://localhost:5000/api/v1/validation \
+  -H 'content-type: application/json' \
+  -H "x-api-key: $DOCUMENT_VALIDATION_API_KEY" \
+  -H 'x-correlation-id: regression-cnh-001' \
+  -d "{\"documentType\":\"CNH\",\"policy\":\"CNH_DEFAULT\",\"idempotencyKey\":\"cnh-sintetica-001\",\"file\":\"$BASE64\"}"
 ```
 
-**Resultado Esperado**:
-- Todas as requisições completam com sucesso
-- Sem erros de timeout
-- Respostas consistentes
+**Esperado:** campos e regras sem OCR bruto, número de documento mascarado e `status` coerente com a evidência sintética.
 
-## Testes de Diferentes Tipos de Documento
+### Idempotência
 
-### CNH (Carteira Nacional de Habilitação)
+Repita a chamada anterior com a mesma `idempotencyKey` e a mesma chave cliente. **Esperado:** mesmo `validationId`, sem novo processamento enquanto o armazenamento de idempotência mantiver o item.
 
-**Dados esperados**:
-- Nome do titular
-- CPF
-- Categoria de habilitação
-- Data de validade
+### Administração
 
-**Teste**:
 ```bash
-curl -X POST http://localhost:5000/api/validation \
-  -H "Content-Type: application/json" \
-  -d "{
-    \"tipoDocumento\": \"CNH\",
-    \"base64Arquivo\": \"$(base64 -w 0 cnh.png)\"
-  }"
+curl -sS http://localhost:5000/api/v1/admin/catalog/policies \
+  -H "x-api-key: $DOCUMENT_VALIDATION_ADMIN_KEY"
 ```
 
-### RG (Registro Geral)
+**Esperado:** `200` apenas para chave com papel `admin`; `403` para chave validator.
 
-**Dados esperados**:
-- Nome completo
-- Número do RG
-- Data de emissão
-- Data de validade
+## Regressão funcional manual
 
-**Teste**:
-```bash
-curl -X POST http://localhost:5000/api/validation \
-  -H "Content-Type: application/json" \
-  -d "{
-    \"tipoDocumento\": \"RG\",
-    \"base64Arquivo\": \"$(base64 -w 0 rg.png)\"
-  }"
-```
+Antes de liberar uma mudança de extrator, teste o conjunto autorizado de documentos de calibração fora do repositório e registre somente metadados/anotações anonimizadas:
 
-### CPF (Cadastro de Pessoa Física)
+| Documento | Cenário | Resultado esperado |
+|---|---|---|
+| CNH válida | Nome e validade legíveis | `APPROVED` ou revisão por baixa evidência. |
+| CNH vencida | Data passada | `REJECTED`. |
+| ASO APTO vigente | Resultado e validade legíveis | `APPROVED`. |
+| ASO INAPTO | Resultado incompatível | `REJECTED`. |
+| ASO incompleto | Data/resultado ausente | `MANUAL_REVIEW`. |
+| Direção Defensiva SEST SENAT 4 h | Escola homologada + 4 h | `APPROVED` quando demais campos válidos. |
+| Direção Defensiva outra homologada 4 h | Mínimo padrão 8 h | `REJECTED`. |
+| Instituição não homologada | Emissor fora da política | `REJECTED`. |
+| Tipo configurável (CIPP) | Placa igual ao contexto e validade futura | `APPROVED`. |
 
-**Dados esperados**:
-- Nome
-- Número do CPF
-- Data de nascimento
+## Checklist de segurança
 
-**Teste**:
-```bash
-curl -X POST http://localhost:5000/api/validation \
-  -H "Content-Type: application/json" \
-  -d "{
-    \"tipoDocumento\": \"CPF\",
-    \"base64Arquivo\": \"$(base64 -w 0 cpf.png)\"
-  }"
-```
-
-## Testes de Casos Extremos
-
-### Teste 1: Imagem Muito Pequena
-
-**Objetivo**: Validar redimensionamento automático
-
-**Passos**:
-1. Criar imagem 100x100px
-2. Fazer upload
-3. Verificar se é redimensionada e processada
-
-**Resultado Esperado**:
-- Imagem é redimensionada para 200x200px
-- Processamento continua normalmente
-
-### Teste 2: Imagem Invertida
-
-**Objetivo**: Validar robustez do OCR
-
-**Passos**:
-1. Inverter cores de documento válido
-2. Fazer upload
-3. Verificar resultado
-
-**Resultado Esperado**:
-- OCR tenta processar
-- Resultado pode ser ANÁLISE MANUAL
-
-### Teste 3: Documento Parcialmente Visível
-
-**Objetivo**: Validar tratamento de documentos incompletos
-
-**Passos**:
-1. Fazer upload de documento cortado
-2. Verificar resultado
-
-**Resultado Esperado**:
-- Status: ANÁLISE MANUAL
-- Motivo: Dados incompletos
-
-## Checklist de Testes
-
-- [ ] Interface web carrega corretamente
-- [ ] Upload de arquivo funciona
-- [ ] Validação retorna resultado esperado
-- [ ] Barra de confiança exibe corretamente
-- [ ] Dados extraídos são precisos
-- [ ] Motivos da decisão são claros
-- [ ] API responde com status correto
-- [ ] Erros são tratados adequadamente
-- [ ] Requisições simultâneas funcionam
-- [ ] Performance está dentro do esperado
-- [ ] Diferentes tipos de documento funcionam
-- [ ] Casos extremos são tratados
-- [ ] Logs são gerados corretamente
-- [ ] Health check funciona
-
-## Relatório de Testes
-
-### Template
-
-```
-Data: DD/MM/YYYY
-Testador: [Nome]
-Versão: 1.0.0
-
-## Testes Executados
-
-| Teste | Status | Observações |
-|-------|--------|-------------|
-| Health Check | ✓ PASSOU | Resposta em < 100ms |
-| Upload de Documento | ✓ PASSOU | Arquivo de 2MB processado |
-| Validação de CNH | ✓ PASSOU | Status APROVADO com 98% confiança |
-| ... | ... | ... |
-
-## Problemas Encontrados
-
-- [ ] Nenhum problema encontrado
-- [ ] Problemas encontrados:
-  1. [Descrição do problema]
-  2. [Descrição do problema]
-
-## Recomendações
-
-- [Recomendação 1]
-- [Recomendação 2]
-
-## Conclusão
-
-[Resumo geral dos testes]
-```
-
-## Próximos Passos
-
-1. Documentar resultados dos testes
-2. Corrigir problemas encontrados
-3. Realizar testes de carga mais intensivos
-4. Implementar melhorias sugeridas
-5. Preparar para produção
-
----
-
-**Versão**: 1.0.0  
-**Data**: Março 2026
+- [ ] Nenhuma chave API está em arquivos, logs, browser extension ou repositório.
+- [ ] CORS permite somente origens necessárias.
+- [ ] Endpoint v1 e administração retornam `401/403` conforme esperado.
+- [ ] Tipos fora de PDF/JPEG/PNG são recusados mesmo que tenham extensão enganosa.
+- [ ] Resposta v1 não contém Base64, OCR bruto, CPF ou CNH completos.
+- [ ] Logs de aplicação não contêm documento, OCR ou identificadores pessoais.
+- [ ] Fluxos `MANUAL_REVIEW` chegam à revisão humana e não são tratados como reprovação automática.

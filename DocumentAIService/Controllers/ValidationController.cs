@@ -1,5 +1,7 @@
 using DocumentAIService.Models;
+using DocumentAIService.Security;
 using DocumentAIService.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DocumentAIService.Controllers;
@@ -11,20 +13,24 @@ public class ValidationController : ControllerBase
     private readonly IDocumentAnalysisService _analysisService;
     private readonly IPdfConverterService _pdfConverterService;
     private readonly IDirecaoDefensivaConfigService _ddConfigService;
+    private readonly IFileInspector _fileInspector;
     private readonly ILogger<ValidationController> _logger;
 
     public ValidationController(
         IDocumentAnalysisService analysisService,
         IPdfConverterService pdfConverterService,
         IDirecaoDefensivaConfigService ddConfigService,
+        IFileInspector fileInspector,
         ILogger<ValidationController> logger)
     {
         _analysisService = analysisService;
         _pdfConverterService = pdfConverterService;
         _ddConfigService = ddConfigService;
+        _fileInspector = fileInspector;
         _logger = logger;
     }
 
+    [Authorize(Policy = "Validator")]
     [HttpPost]
     public async Task<ActionResult<ValidationResponse>> ValidateDocument([FromBody] ValidationRequest request)
     {
@@ -38,6 +44,10 @@ public class ValidationController : ControllerBase
             if (fileData.Length > 10 * 1024 * 1024)
                 return BadRequest(new { error = "Arquivo muito grande (máximo 10MB)" });
 
+            var inspection = _fileInspector.Inspect(fileData);
+            if (!inspection.IsValid)
+                return BadRequest(new { error = inspection.ErrorMessage, code = inspection.ErrorCode });
+
             byte[] imageData = fileData;
             if (IsPdf(fileData))
             {
@@ -46,7 +56,7 @@ public class ValidationController : ControllerBase
             }
 
             var response = await _analysisService.ValidateDocumentAsync(request.TipoDocumento, imageData);
-            _logger.LogInformation($"Validação concluída. Tipo: {request.TipoDocumento}, Status: {response.Status}");
+            _logger.LogInformation("Validação legada concluída. Tipo: {DocumentType}; Status: {Status}", request.TipoDocumento, response.Status);
             return Ok(response);
         }
         catch (FormatException)
@@ -55,8 +65,8 @@ public class ValidationController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Erro na validação: {ex.Message}");
-            return StatusCode(500, new { error = "Erro ao processar documento", details = ex.Message });
+            _logger.LogError(ex, "Erro técnico durante validação legada.");
+            return StatusCode(500, new { error = "Erro ao processar documento", correlationId = HttpContext.TraceIdentifier });
         }
     }
 
@@ -73,12 +83,14 @@ public class ValidationController : ControllerBase
 
     // ─── ENDPOINTS DE CONFIGURAÇÃO DE DIREÇÃO DEFENSIVA ──────────────────────
 
+    [Authorize(Policy = "Admin")]
     [HttpGet("config/direcao-defensiva")]
     public ActionResult<DirecaoDefensivaConfig> GetDirecaoDefensivaConfig()
     {
         return Ok(_ddConfigService.GetConfig());
     }
 
+    [Authorize(Policy = "Admin")]
     [HttpPut("config/direcao-defensiva")]
     public ActionResult UpdateDirecaoDefensivaConfig([FromBody] DirecaoDefensivaConfig config)
     {
@@ -93,6 +105,7 @@ public class ValidationController : ControllerBase
         }
     }
 
+    [Authorize(Policy = "Admin")]
     [HttpPost("config/direcao-defensiva/escolas")]
     public ActionResult AddEscolaAprovada([FromBody] string escola)
     {
@@ -106,6 +119,7 @@ public class ValidationController : ControllerBase
         return Conflict(new { message = $"Escola '{escola}' já está na lista" });
     }
 
+    [Authorize(Policy = "Admin")]
     [HttpDelete("config/direcao-defensiva/escolas/{escola}")]
     public ActionResult RemoveEscolaAprovada(string escola)
     {
@@ -119,6 +133,7 @@ public class ValidationController : ControllerBase
         return NotFound(new { message = $"Escola '{escola}' não encontrada na lista" });
     }
 
+    [Authorize(Policy = "Admin")]
     [HttpPut("config/direcao-defensiva/carga-horaria/{horas}")]
     public ActionResult UpdateCargaHorariaMinima(int horas)
     {

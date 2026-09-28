@@ -50,6 +50,8 @@ public class DocumentAnalysisService : IDocumentAnalysisService
             {
                 response.Status = "REPROVADO";
                 response.Confianca = 0;
+                response.DadosExtraidos.TipoDocumentoDetectado = "UNKNOWN";
+                response.DadosExtraidos.ConfiancaOcr = 0;
                 response.Motivos.Add("✗ Falha ao extrair texto do documento - OCR não conseguiu ler");
                 return response;
             }
@@ -73,6 +75,10 @@ public class DocumentAnalysisService : IDocumentAnalysisService
                     score = await ValidateCnh(extractedText, tipoDocumento, ocrConfidence, score, response);
                     break;
             }
+
+            // Metadados técnicos para o adaptador v1. O contrato legado continua inalterado.
+            response.DadosExtraidos.TipoDocumentoDetectado = tipoDetectado;
+            response.DadosExtraidos.ConfiancaOcr = ocrConfidence;
 
             response.Confianca = Math.Min(100, Math.Max(0, (int)score));
 
@@ -246,11 +252,11 @@ public class DocumentAnalysisService : IDocumentAnalysisService
         var patterns = new[]
         {
             // "2 e 1 NOME E SOBRENOME\nNOME COMPLETO" — CNH digital padrão
-            @"(?:2\s+e\s+1\s+)?NOME\s+E\s+SOBRENOME\s*\n\s*([A-ZÁÉÍÓÚÂÊÔÃÕÇÀÜ][A-ZÁÉÍÓÚÂÊÔÃÕÇÀÜa-záéíóúâêôãõçàü\s]{5,60})",
+            @"(?:2\s+e\s+1\s+)?NOME\s+E\s+SOBRENOME\s*\n\s*([A-ZÁÉÍÓÚÂÊÔÃÕÇÀÜ][A-ZÁÉÍÓÚÂÊÔÃÕÇÀÜa-záéíóúâêôãõçàü ]{5,60})",
             // "NOME\nNOME COMPLETO"
-            @"^NOME\s*\n\s*([A-ZÁÉÍÓÚÂÊÔÃÕÇ][A-ZÁÉÍÓÚÂÊÔÃÕÇa-záéíóúâêôãõç\s]{5,60})",
+            @"^NOME\s*\n\s*([A-ZÁÉÍÓÚÂÊÔÃÕÇ][A-ZÁÉÍÓÚÂÊÔÃÕÇa-záéíóúâêôãõç ]{5,60})",
             // Após "DRIVER LICENSE" ou "HABILITAÇÃO"
-            @"(?:DRIVER\s+LICENSE|HABILITAC[AÃ]O)[^\n]*\n+([A-ZÁÉÍÓÚÂÊÔÃÕÇ][A-ZÁÉÍÓÚÂÊÔÃÕÇ\s]{8,50})\n",
+            @"(?:DRIVER\s+LICENSE|HABILITAC[AÃ]O)[^\n]*\n+([A-ZÁÉÍÓÚÂÊÔÃÕÇ][A-ZÁÉÍÓÚÂÊÔÃÕÇ ]{8,50})\n",
         };
 
         foreach (var p in patterns)

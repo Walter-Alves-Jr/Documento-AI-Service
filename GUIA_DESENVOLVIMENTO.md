@@ -1,118 +1,66 @@
-# Guia de Desenvolvimento — Document AI Service v2.1
+# Guia de Desenvolvimento — Document Validation Service v1
 
-Este documento detalha a arquitetura, regras de negócio, ambiente de desenvolvimento e processos de calibração do **Document AI Service**, com foco nas regras específicas de credenciamento da **BRF**.
+## Estrutura
 
----
+```text
+DocumentAIService/
+  Controllers/
+    ValidationController.cs            # contrato legado, autenticado para transição
+    V1/DocumentValidationV1Controller  # contrato recomendado
+    V1/CatalogAdminController          # catálogo administrativo
+  Services/
+    OcrService.cs                      # Tesseract e pré-processamento
+    PdfConverterService.cs             # primeira página de PDF
+    DocumentAnalysisService.cs         # extratores legados calibrados
+    V1/LegacyExtractionAdapter.cs      # normalização/extração configurável
+    V1/RulesEngine.cs                  # regras declarativas
+    V1/ValidationCatalogService.cs     # catálogo JSON/versionamento
+    V1/DocumentValidationV1Service.cs  # orquestração
+  Models/Catalog/                      # tipos, campos, políticas e regras
+  Models/V1/                           # contratos v1
+  Security/                            # API key, file inspection, middleware
+  configuration/validation-catalog.json
+```
 
-## 1. Visão Geral da Arquitetura
+## Princípios de alteração
 
-O sistema é uma API REST construída em **ASP.NET Core 8.0**, focada em validação automática de documentos (CNH, ASO e Certificados de Direção Defensiva) utilizando Inteligência Artificial (OCR) e expressões regulares.
+1. Não misture extração com decisão de negócio do consumidor.
+2. Não adicione regra de política em controller.
+3. Primeiro altere o catálogo; crie código apenas quando a extração exigir técnica dedicada.
+4. Crie uma versão nova de política quando critérios mudarem.
+5. Não devolver OCR bruto nem dado pessoal completo pela API v1.
+6. Não adicione documentos reais, Base64, chaves ou resultados identificáveis ao Git.
 
-### Componentes Principais
+## Extração
 
-- **Controllers (`ValidationController`)**: Ponto de entrada da API. Recebe requisições POST com arquivos em Base64 e gerencia os endpoints de configuração.
-- **DocumentAnalysisService**: O coração do sistema. Contém a lógica de negócio, extração de dados e validação de regras específicas (MRZ, validade, carga horária).
-- **OcrService**: Serviço de abstração para o Tesseract OCR. Implementa 10 estratégias de extração (rotações 0°, 90°, 180°, 270°, escala 2×, binarização) para garantir a leitura mesmo em documentos digitalizados com baixa qualidade.
-- **PdfConverterService**: Serviço utilitário que converte arquivos PDF em imagens PNG (via `pdftoppm`) antes de enviar ao OCR.
-- **DirecaoDefensivaConfigService**: Gerencia a persistência das regras dinâmicas (escolas homologadas, cursos aceitos, carga horária) em um arquivo JSON local.
+CNH, ASO e Direção Defensiva seguem pelo `DocumentAnalysisService` por compatibilidade e calibração. O adaptador v1 normaliza seus campos, mas ignora o status legado para tomar a decisão: a decisão v1 sempre vem de `RulesEngine` + `ValidationPolicyDefinition`.
 
----
+Para tipo novo, `LegacyExtractionAdapter` usa `IdentificationPatterns` e `ExtractionPatterns` definidos no catálogo. O motor aplica timeout de regex e o catálogo recusa padrões inválidos/longos. A qualidade desse caminho deve ser calibrada antes de uso operacional.
 
-## 2. Regras de Negócio (Calibração BRF)
+## Políticas
 
-A versão 2.1 foi rigorosamente calibrada para atender aos requisitos de credenciamento de motoristas da BRF.
+`ValidationPolicyDefinition` possui `code`, `documentType`, `version`, `minimumConfidence`, estado e `rules`. Os rule types iniciais estão descritos em [DOCUMENT_VALIDATION_SERVICE.md](DOCUMENT_VALIDATION_SERVICE.md). O tipo `minimum_by_reference` implementa, por configuração, a regra de 4h para SEST SENAT e 8h padrão.
 
-### 2.1. Escolas Homologadas (Direção Defensiva)
+## Segurança no desenvolvimento
 
-O sistema aceita **apenas** certificados emitidos pelas seguintes instituições homologadas:
+- Use API key por variável de ambiente, não por arquivo versionado.
+- O painel local armazena a chave apenas em `sessionStorage`; é ferramenta de teste, não interface administrativa de produção.
+- Erros são correlacionados por `X-Correlation-Id`.
+- Configure explicitamente CORS no ambiente necessário.
+- Use dados sintéticos em testes repetíveis.
 
-- Hartmann
-- Inttergramed
-- Eco Trainning
-- SEST SENAT
-- Concórdia Treinamentos
-- FABET
-- Champonalli (Centro de Formação de Condutores)
-- CERTO (Centro de Ref. em Treinamento Op.)
-- CIT Drive (Consultoria Integrada ao Transportador)
-
-> **Importante:** Instituições genéricas como "UNIGIO", "SENAI", "SENAC" ou plataformas EAD não listadas acima são reprovadas automaticamente.
-
-### 2.2. Regra de Carga Horária Diferenciada
-
-A BRF estabelece uma regra específica de carga horária mínima para os cursos de Direção Defensiva:
-
-- **SEST SENAT**: Carga horária mínima exigida é de **4 horas**.
-- **Demais Escolas Homologadas**: Carga horária mínima exigida é de **8 horas**.
-
-Esta regra está codificada no método `IsCargaHorariaValida` do `DocumentAnalysisService`.
-
-### 2.3. Extração MRZ (CNH-e Digital)
-
-Para CNHs digitais (CNH-e), o OCR tradicional muitas vezes falha ao ler o texto impresso devido a artefatos visuais. A versão 2.1 introduz a extração de dados via **MRZ (Machine Readable Zone)**:
-
-- **Nome do Condutor**: Extraído da linha 3 do MRZ (ex: `LEONARDO<<VIEIRA<SILVA`).
-- **Data de Validade**: Extraída da linha 2 do MRZ, que contém a data no formato `AAMMDD` (ex: `9901085M3304204` indica validade em `20/04/2033`).
-
----
-
-## 3. Ambiente de Desenvolvimento Local
-
-### 3.1. Pré-requisitos
-
-Para rodar o projeto localmente (Linux/Ubuntu), você precisará instalar as dependências de sistema:
+## Testar alterações
 
 ```bash
-sudo apt update
-sudo apt install -y tesseract-ocr tesseract-ocr-por poppler-utils libgdiplus
+dotnet build DocumentAIService/DocumentAIService.csproj
+dotnet test DocumentAIService.Tests/DocumentAIService.Tests.csproj
 ```
 
-- `tesseract-ocr` e `tesseract-ocr-por`: Motor de OCR e pacote de idioma Português.
-- `poppler-utils`: Fornece o comando `pdftoppm` usado para converter PDFs em imagens.
-- `libgdiplus`: Dependência do .NET para manipulação de imagens (System.Drawing).
+Adicione teste de regra sempre que incluir rule type; adicione teste de extração para novos padrões/adaptadores; execute regressão com documentos autorizados fora do Git para CNH, ASO e Direção Defensiva.
 
-### 3.2. Compilando e Rodando
+## Limitações atuais
 
-O projeto utiliza o SDK do .NET 8.0.
-
-```bash
-cd DocumentAIService
-dotnet build
-dotnet run --urls "http://0.0.0.0:5000"
-```
-
-A API estará disponível em `http://localhost:5000/api/validation`.
-O front-end de testes locais estará disponível na raiz `http://localhost:5000/`.
-
----
-
-## 4. Front-end de Testes Locais
-
-O projeto inclui um front-end Single Page Application (SPA) embutido no `wwwroot/index.html`. Ele é servido automaticamente pelo Kestrel e serve como uma ferramenta de diagnóstico e calibração para desenvolvedores.
-
-### Recursos do Front-end:
-- **Upload Drag & Drop**: Suporte a PDF e imagens com conversão automática para Base64.
-- **Visualização de Confiança**: Barra de progresso mostrando o nível de confiança do OCR.
-- **Painel de Configuração BRF**: Interface gráfica para adicionar/remover escolas homologadas e ajustar a carga horária padrão.
-- **Status da API**: Monitoramento em tempo real do health check do servidor.
-
----
-
-## 5. Estratégias de Depuração (Debugging)
-
-Quando um documento falha na validação, o problema geralmente está na qualidade da imagem ou no padrão Regex.
-
-### Script de Extração de Texto Bruto
-Para ver exatamente o que o OCR está lendo, crie um script Python simples que chame o OCR diretamente ou adicione um log temporário no `OcrService.cs`:
-
-```csharp
-// No OcrService.cs, dentro de ProcessImage()
-Console.WriteLine("--- TEXTO OCR ---");
-Console.WriteLine(text);
-Console.WriteLine("-----------------");
-```
-
-### Problemas Comuns:
-1. **Documento Rotacionado**: O OCR nativo falha se o texto estiver de lado. A v2.1 tenta 4 rotações (0, 90, 180, 270). Se falhar, a imagem original tem ruído excessivo.
-2. **Datas Manuscritas**: ASOs frequentemente possuem datas carimbadas ou escritas à mão. O Tesseract tem baixa precisão para caligrafia. Nesses casos, o sistema retorna `ANÁLISE MANUAL`.
-3. **Falso Positivo de Escola**: O regex de extração de escola pode capturar pedaços de texto aleatórios. A lista de escolas homologadas atua como um filtro final de segurança.
+- Processamento síncrono e somente primeira página de PDF.
+- Auditoria/idempotência em memória; produção requer persistência apropriada.
+- Catálogo em JSON é estágio inicial; produção distribuída requer banco/controle de mudança.
+- OCR não atesta autenticidade em fontes emissoras.

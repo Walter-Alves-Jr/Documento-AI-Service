@@ -1,6 +1,26 @@
-@DocumentAIService_HostAddress = http://localhost:5199
+@DocumentValidation_HostAddress = http://localhost:5000
+@DocumentValidation_ApiKey = substitua-por-chave-local
 
-GET {{DocumentAIService_HostAddress}}/weatherforecast/
+### Health (não exige autenticação)
+GET {{DocumentValidation_HostAddress}}/api/validation/health
 Accept: application/json
 
-###
+### Validar CNH pela API v1
+POST {{DocumentValidation_HostAddress}}/api/v1/validation
+Content-Type: application/json
+X-API-Key: {{DocumentValidation_ApiKey}}
+X-Correlation-Id: ide-http-client-cnh-001
+
+{
+  "documentType": "CNH",
+  "policy": "CNH_DEFAULT",
+  "idempotencyKey": "ide-http-client-cnh-001",
+  "context": {
+    "driverId": "demo-123"
+  },
+  "file": "<BASE64_DE_PDF_JPEG_OU_PNG>"
+}
+
+### Listar políticas (requer chave com papel admin)
+GET {{DocumentValidation_HostAddress}}/api/v1/admin/catalog/policies
+X-API-Key: {{DocumentValidation_ApiKey}}
