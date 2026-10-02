@@ -18,7 +18,7 @@ A plataforma não determina se um motorista entra no terminal, se uma agenda é 
 | Score separado da confidence OCR | Implementado |
 | Autenticação, papéis, CORS, rate limit e inspeção de arquivo | Implementados |
 | Resposta minimizada e auditoria sem documento | Implementadas |
-| Persistência produtiva e administração completa | Próxima etapa |
+| Persistência de compliance PostgreSQL, migrations e administração de provider | Implementadas sem integração externa fictícia |
 
 ## Benefícios
 
@@ -31,10 +31,10 @@ A plataforma não determina se um motorista entra no terminal, se uma agenda é 
 ## Próximas decisões de produto/infraestrutura
 
 1. Definir controlador, bases legais, retenção, encarregado e fluxo de revisão humana.
-2. Migrar catálogo, auditoria e idempotência para armazenamento persistente governado.
+2. Migrar o catálogo administrativo JSON para persistência governada com trilha de aprovação.
 3. Implantar gateway, secret manager, TLS, WAF e monitoramento.
 4. Estabelecer processo de aprovação/versionamento de políticas.
 5. Calibrar novos documentos com conjunto autorizado e métricas de qualidade.
-6. Planejar fila/assíncrono para maior volume ou documentos múltiplos.
+6. Implementar adaptadores de provedores oficiais/contratados e, só então, habilitar renovação externa em produção.
 
 Consulte [DOCUMENT_VALIDATION_SERVICE.md](DOCUMENT_VALIDATION_SERVICE.md) para arquitetura, contrato e controles de produção.

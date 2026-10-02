@@ -55,7 +55,7 @@ Resultado estruturado para o consumidor
 
 ### Compatibilidade
 
-O endpoint anterior `POST /api/validation` foi preservado para transição, mas agora exige API key e valida assinatura do arquivo. O contrato recomendado é **`POST /api/v1/validation`**.
+O endpoint anterior `POST /api/validation` foi preservado para transição, mas agora exige API key e valida assinatura do arquivo. `POST /api/v1/validation` permanece para validação documental sem estado. Para integração operacional, o contrato recomendado é **`POST /api/v1/validations`**, que mantém compliance persistido em PostgreSQL.
 
 As políticas de equivalência existentes são:
 
@@ -164,7 +164,7 @@ GET /api/v1/validation/{validationId}
 X-API-Key: <mesma-chave-cliente>
 ```
 
-Devolve a auditoria mínima da validação para a mesma chave cliente. A implementação inicial é em memória e deve ser substituída por persistência transacional para uso distribuído/produção.
+Devolve a auditoria mínima da validação sem estado para a mesma chave cliente. O fluxo persistido usa `GET /api/v1/validations/{validationId}` e consulta PostgreSQL segmentado por cliente.
 
 ### Catálogo administrativo
 
@@ -283,8 +283,8 @@ Nenhum controller novo é necessário para esse cadastro.
 ### Itens obrigatórios antes de produção
 
 1. Usar chaves longas/rotacionáveis em secret manager, nunca em repositório, HTML, extensão ou cliente de navegador.
-2. Trocar `InMemoryValidationAuditStore` e `InMemoryIdempotencyStore` por banco/Redis com criptografia, controle de acesso, retenção e exclusão verificável.
-3. Armazenar catálogo administrativo em banco/configuração persistente com histórico e aprovação; filesystem do container é inadequado para governança de produção.
+2. Operar PostgreSQL com backup, criptografia, controle de acesso, retenção e exclusão verificável para o estado persistido de compliance.
+3. Armazenar catálogo administrativo em banco/configuração persistente com histórico e aprovação; o catálogo JSON atual não é adequado para governança concorrente de produção.
 4. Colocar API atrás de TLS, WAF/gateway, monitoramento e política de incidentes.
 5. Definir DPA/contrato com hospedagem e qualquer futuro fornecedor de IA externa como suboperador, quando aplicável.
 6. Implantar aviso de privacidade, canal de direitos do titular e processo de revisão humana/contestação para `MANUAL_REVIEW` e decisões relevantes.
@@ -315,6 +315,14 @@ export DocumentValidation__Security__ApiKeys__0__Id=local-validator
 export DocumentValidation__Security__ApiKeys__0__Key='troque-por-uma-chave-local-longa'
 export DocumentValidation__Security__ApiKeys__0__Role=admin
 export DocumentValidation__Cors__AllowedOrigins__0=http://localhost:5000
+export ConnectionStrings__DocumentValidation='Host=localhost;Port=5435;Database=document_validation;Username=document_validation;Password=<POSTGRES_PASSWORD>'
+```
+
+Antes de iniciar, disponibilize PostgreSQL 17. O compose da raiz segue o padrão do ecossistema:
+
+```bash
+cp .env.example .env
+docker compose up -d postgres
 ```
 
 Compile e inicie:
@@ -357,7 +365,7 @@ DocumentValidation__RateLimit__WindowSeconds=60
 DocumentValidation__Audit__RetentionDays=30
 ```
 
-Para catálogo alterável em produção, use volume persistente com backup/controle de mudança ou, preferencialmente, implemente repositório de banco de dados. Em hosts com filesystem efêmero, alterações administrativas em JSON não sobrevivem a deploy/restart.
+Para catálogo alterável em produção, use volume persistente com backup/controle de mudança ou migre-o para banco. Em hosts com filesystem efêmero, alterações administrativas em JSON não sobrevivem a deploy/restart. O estado de compliance, validações e providers já utiliza PostgreSQL.
 
 ## Integração ilustrativa com Vapora
 
@@ -398,7 +406,7 @@ Vapora pode tratar `MANUAL_REVIEW` como `PENDING_VALIDATION`; não deve convert�
 - `X-Correlation-Id`: liga logs, erro e chamada do consumidor.
 - Métricas disponíveis na resposta: `processingTimeMs`, status, score e confidence.
 - Logs registram somente tipo, política, status, tempos, client ID técnico e correlation ID.
-- `idempotencyKey`: evita reprocessamento acidental para mesma chave cliente durante a retenção em memória.
+- `idempotencyKey`: evita reprocessamento acidental para mesma chave cliente; no endpoint persistido, há unicidade PostgreSQL por cliente/chave.
 - O modelo é síncrono nesta etapa. O contrato e o `validationId` permitem evolução para fila, `202 Accepted` e `GET /api/v1/validation/{id}` sem mudar a semântica do consumidor.
 
 Limites atuais:

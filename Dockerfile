@@ -15,6 +15,7 @@ WORKDIR /app
 
 # Instalar Tesseract OCR + dependências
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
     tesseract-ocr \
     tesseract-ocr-por \
     tesseract-ocr-eng \

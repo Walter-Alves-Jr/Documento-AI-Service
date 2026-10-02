@@ -1,0 +1,47 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: document_validation
+      POSTGRES_USER: document_validation
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no arquivo .env}
+    ports:
+      - "5435:5432"
+    volumes:
+      - document-validation-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U document_validation -d document_validation"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DocumentValidation: Host=postgres;Port=5432;Database=document_validation;Username=document_validation;Password=${POSTGRES_PASSWORD}
+      Database__MigrateOnStartup: "true"
+      DataProtection__KeysDirectory: /var/lib/document-validation/keys
+      DocumentValidation__Security__ApiKeys__0__Id: ${DVS_API_KEY_ID:?Defina DVS_API_KEY_ID}
+      DocumentValidation__Security__ApiKeys__0__Key: ${DVS_API_KEY:?Defina DVS_API_KEY}
+      DocumentValidation__Security__ApiKeys__0__Role: admin
+      DocumentValidation__Cors__AllowedOrigins__0: ${DVS_ALLOWED_ORIGIN:-http://localhost:8080}
+      DocumentValidation__Renewal__Enabled: ${DVS_RENEWAL_ENABLED:-false}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    volumes:
+      - document-validation-keys:/var/lib/document-validation/keys
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  document-validation-postgres:
+  document-validation-keys:

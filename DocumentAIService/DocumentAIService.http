@@ -21,6 +21,27 @@ X-Correlation-Id: ide-http-client-cnh-001
   "file": "<BASE64_DE_PDF_JPEG_OU_PNG>"
 }
 
+### Validar e persistir compliance de veículo
+POST {{DocumentValidation_HostAddress}}/api/v1/validations
+Content-Type: application/json
+X-API-Key: {{DocumentValidation_ApiKey}}
+X-Correlation-Id: ide-http-client-cipp-001
+
+{
+  "entityType": "VEHICLE",
+  "entityId": "vehicle-123",
+  "plate": "ABC-1D23",
+  "documentType": "CIPP",
+  "policy": "CIPP_DEFAULT",
+  "idempotencyKey": "ide-cipp-vehicle-123-001",
+  "fileName": "cipp.png",
+  "file": "<BASE64_DE_PDF_JPEG_OU_PNG>"
+}
+
+### Consultar compliance sem reprocessar OCR
+GET {{DocumentValidation_HostAddress}}/api/v1/compliance/VEHICLE/vehicle-123
+X-API-Key: {{DocumentValidation_ApiKey}}
+
 ### Listar políticas (requer chave com papel admin)
 GET {{DocumentValidation_HostAddress}}/api/v1/admin/catalog/policies
 X-API-Key: {{DocumentValidation_ApiKey}}

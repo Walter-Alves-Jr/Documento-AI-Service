@@ -4,8 +4,8 @@
     {
       "Id": "0b0ba3f6d70947b090574af4b27a06dd",
       "Code": "CNH",
-      "Name": "Carteira Nacional de Habilita\u00E7\u00E3o",
-      "Description": "Documento de habilita\u00E7\u00E3o de condutor.",
+      "Name": "Carteira Nacional de Habilitação",
+      "Description": "Documento de habilitação de condutor.",
       "Active": true,
       "Version": "1.0",
       "IdentificationPatterns": [],
@@ -21,7 +21,7 @@
         },
         {
           "Code": "documentNumber",
-          "Name": "N\u00FAmero do documento ou CPF",
+          "Name": "Número do documento ou CPF",
           "DataType": "string",
           "Required": false,
           "Sensitivity": "personal",
@@ -51,8 +51,8 @@
     {
       "Id": "e0ae10756b7d4fdab7821b51984e6222",
       "Code": "ASO",
-      "Name": "Atestado de Sa\u00FAde Ocupacional",
-      "Description": "Atestado ocupacional; pode conter dados pessoais sens\u00EDveis.",
+      "Name": "Atestado de Saúde Ocupacional",
+      "Description": "Atestado ocupacional; pode conter dados pessoais sensíveis.",
       "Active": true,
       "Version": "1.0",
       "IdentificationPatterns": [],
@@ -86,7 +86,7 @@
         },
         {
           "Code": "fitnessResult",
-          "Name": "Resultado de aptid\u00E3o",
+          "Name": "Resultado de aptidão",
           "DataType": "string",
           "Required": true,
           "Sensitivity": "sensitive",
@@ -95,7 +95,7 @@
         },
         {
           "Code": "issueDate",
-          "Name": "Data de realiza\u00E7\u00E3o",
+          "Name": "Data de realização",
           "DataType": "date",
           "Required": true,
           "Sensitivity": "sensitive",
@@ -113,7 +113,7 @@
         },
         {
           "Code": "doctorName",
-          "Name": "M\u00E9dico",
+          "Name": "Médico",
           "DataType": "string",
           "Required": false,
           "Sensitivity": "personal",
@@ -125,7 +125,7 @@
     {
       "Id": "7ca3fa4132a649ebb9a4d77a25c64684",
       "Code": "DIRECAO_DEFENSIVA",
-      "Name": "Certificado de Dire\u00E7\u00E3o Defensiva",
+      "Name": "Certificado de Direção Defensiva",
       "Description": "Certificado de treinamento de condutor.",
       "Active": true,
       "Version": "1.0",
@@ -151,7 +151,7 @@
         },
         {
           "Code": "issuer",
-          "Name": "Institui\u00E7\u00E3o emissora",
+          "Name": "Instituição emissora",
           "DataType": "string",
           "Required": false,
           "Sensitivity": "personal",
@@ -169,7 +169,7 @@
         },
         {
           "Code": "courseHours",
-          "Name": "Carga hor\u00E1ria",
+          "Name": "Carga horária",
           "DataType": "number",
           "Required": false,
           "Sensitivity": "personal",
@@ -178,7 +178,7 @@
         },
         {
           "Code": "completionDate",
-          "Name": "Conclus\u00E3o",
+          "Name": "Conclusão",
           "DataType": "date",
           "Required": true,
           "Sensitivity": "personal",
@@ -199,12 +199,12 @@
     {
       "Id": "1187550a21114b9d803ac84ad2232afe",
       "Code": "CIPP",
-      "Name": "Certificado de Inspe\u00E7\u00E3o para o Transporte de Produtos Perigosos",
-      "Description": "Exemplo de tipo cadastrado sem cria\u00E7\u00E3o de controller.",
+      "Name": "Certificado de Inspeção para o Transporte de Produtos Perigosos",
+      "Description": "Exemplo de tipo cadastrado sem criação de controller.",
       "Active": true,
       "Version": "1.0",
       "IdentificationPatterns": [
-        "CERTIFICADO\\s\u002BDE\\s\u002BINSPECAO"
+        "CERTIFICADO\\s+DE\\s+INSPECAO"
       ],
       "Fields": [
         {
@@ -220,13 +220,13 @@
         },
         {
           "Code": "certificateNumber",
-          "Name": "N\u00FAmero do certificado",
+          "Name": "Número do certificado",
           "DataType": "string",
           "Required": false,
           "Sensitivity": "personal",
           "ResponseMode": "mask",
           "ExtractionPatterns": [
-            "CERTIFICADO\\s*(?:N[O\u00BA.]*)?\\s*[:#]?\\s*([A-Z0-9-]{5,})"
+            "CERTIFICADO\\s*(?:N[Oº.]*)?\\s*[:#]?\\s*([A-Z0-9-]{5,})"
           ]
         },
         {
@@ -241,14 +241,279 @@
           ]
         }
       ]
+    },
+    {
+      "Id": "mopp-catalog-v1",
+      "Code": "MOPP",
+      "Name": "Curso MOPP",
+      "Description": "Certificado de movimentação de produtos perigosos do motorista.",
+      "Active": true,
+      "Version": "1.0",
+      "IdentificationPatterns": [
+        "MOPP|MOVIMENTACAO\\s+OPERACIONAL\\s+DE\\s+PRODUTOS\\s+PERIGOSOS"
+      ],
+      "Fields": [
+        {
+          "Code": "holderName",
+          "Name": "Nome do titular",
+          "DataType": "string",
+          "Required": true,
+          "Sensitivity": "personal",
+          "ResponseMode": "mask",
+          "ExtractionPatterns": [
+            "(?:NOME|CONDUTOR|RAZAO SOCIAL)\\s*[:]?\\s*([A-ZÁÉÍÓÚÂÊÔÃÕÇ][A-ZÁÉÍÓÚÂÊÔÃÕÇa-záéíóúâêôãõç ]{4,80})"
+          ]
+        },
+        {
+          "Code": "expirationDate",
+          "Name": "Data de validade",
+          "DataType": "date",
+          "Required": false,
+          "Sensitivity": "personal",
+          "ResponseMode": "show",
+          "ExtractionPatterns": [
+            "(?:VALIDADE|VENCIMENTO)\\s*[:]?\\s*(\\d{2}[/-]\\d{2}[/-]\\d{4})"
+          ]
+        }
+      ]
+    },
+    {
+      "Id": "crlv-catalog-v1",
+      "Code": "CRLV",
+      "Name": "Certificado de Registro e Licenciamento de Veículo",
+      "Description": "Documento de veículo.",
+      "Active": true,
+      "Version": "1.0",
+      "IdentificationPatterns": [
+        "CRLV|CERTIFICADO\\s+DE\\s+REGISTRO\\s+E\\s+LICENCIAMENTO\\s+DE\\s+VEICULO"
+      ],
+      "Fields": [
+        {
+          "Code": "plate",
+          "Name": "Placa",
+          "DataType": "string",
+          "Required": true,
+          "Sensitivity": "personal",
+          "ResponseMode": "show",
+          "ExtractionPatterns": [
+            "PLACA\\s*[:#]?\\s*([A-Z]{3}[- ]?\\d[A-Z0-9]\\d{2})"
+          ]
+        },
+        {
+          "Code": "documentNumber",
+          "Name": "Número do CRLV",
+          "DataType": "string",
+          "Required": false,
+          "Sensitivity": "personal",
+          "ResponseMode": "mask",
+          "ExtractionPatterns": [
+            "(?:CRLV|RENAVAM)\\s*[:#]?\\s*([A-Z0-9.-]{5,})"
+          ]
+        },
+        {
+          "Code": "expirationDate",
+          "Name": "Data de validade",
+          "DataType": "date",
+          "Required": false,
+          "Sensitivity": "personal",
+          "ResponseMode": "show",
+          "ExtractionPatterns": [
+            "(?:VALIDADE|VENCIMENTO)\\s*[:]?\\s*(\\d{2}[/-]\\d{2}[/-]\\d{4})"
+          ]
+        }
+      ]
+    },
+    {
+      "Id": "civ-catalog-v1",
+      "Code": "CIV",
+      "Name": "Certificado de Inspeção Veicular",
+      "Description": "Certificado configurável para veículo ou equipamento.",
+      "Active": true,
+      "Version": "1.0",
+      "IdentificationPatterns": [
+        "CIV|CERTIFICADO\\s+DE\\s+INSPECAO\\s+VEICULAR"
+      ],
+      "Fields": [
+        {
+          "Code": "plate",
+          "Name": "Placa",
+          "DataType": "string",
+          "Required": true,
+          "Sensitivity": "personal",
+          "ResponseMode": "show",
+          "ExtractionPatterns": [
+            "PLACA\\s*[:#]?\\s*([A-Z]{3}[- ]?\\d[A-Z0-9]\\d{2})"
+          ]
+        },
+        {
+          "Code": "certificateNumber",
+          "Name": "Número do certificado",
+          "DataType": "string",
+          "Required": false,
+          "Sensitivity": "personal",
+          "ResponseMode": "mask",
+          "ExtractionPatterns": [
+            "(?:CIV|CERTIFICADO)\\s*[:#]?\\s*([A-Z0-9.-]{5,})"
+          ]
+        },
+        {
+          "Code": "expirationDate",
+          "Name": "Data de validade",
+          "DataType": "date",
+          "Required": false,
+          "Sensitivity": "personal",
+          "ResponseMode": "show",
+          "ExtractionPatterns": [
+            "(?:VALIDADE|VENCIMENTO)\\s*[:]?\\s*(\\d{2}[/-]\\d{2}[/-]\\d{4})"
+          ]
+        }
+      ]
+    },
+    {
+      "Id": "ctpp-catalog-v1",
+      "Code": "CTPP",
+      "Name": "Certificado de Inspeção para Transporte de Produtos Perigosos",
+      "Description": "Certificado configurável para veículo ou equipamento.",
+      "Active": true,
+      "Version": "1.0",
+      "IdentificationPatterns": [
+        "CTPP|CERTIFICADO\\s+DE\\s+INSPECAO\\s+PARA\\s+O\\s+TRANSPORTE\\s+DE\\s+PRODUTOS\\s+PERIGOSOS"
+      ],
+      "Fields": [
+        {
+          "Code": "plate",
+          "Name": "Placa",
+          "DataType": "string",
+          "Required": true,
+          "Sensitivity": "personal",
+          "ResponseMode": "show",
+          "ExtractionPatterns": [
+            "PLACA\\s*[:#]?\\s*([A-Z]{3}[- ]?\\d[A-Z0-9]\\d{2})"
+          ]
+        },
+        {
+          "Code": "certificateNumber",
+          "Name": "Número do certificado",
+          "DataType": "string",
+          "Required": false,
+          "Sensitivity": "personal",
+          "ResponseMode": "mask",
+          "ExtractionPatterns": [
+            "(?:CTPP|CERTIFICADO)\\s*[:#]?\\s*([A-Z0-9.-]{5,})"
+          ]
+        },
+        {
+          "Code": "expirationDate",
+          "Name": "Data de validade",
+          "DataType": "date",
+          "Required": false,
+          "Sensitivity": "personal",
+          "ResponseMode": "show",
+          "ExtractionPatterns": [
+            "(?:VALIDADE|VENCIMENTO)\\s*[:]?\\s*(\\d{2}[/-]\\d{2}[/-]\\d{4})"
+          ]
+        }
+      ]
+    },
+    {
+      "Id": "rntrc-catalog-v1",
+      "Code": "RNTRC",
+      "Name": "Registro Nacional de Transportadores Rodoviários de Cargas",
+      "Description": "Cadastro de transportadora.",
+      "Active": true,
+      "Version": "1.0",
+      "IdentificationPatterns": [
+        "RNTRC|REGISTRO\\s+NACIONAL\\s+DE\\s+TRANSPORTADORES\\s+RODOVIARIOS\\s+DE\\s+CARGAS"
+      ],
+      "Fields": [
+        {
+          "Code": "holderName",
+          "Name": "Nome do titular",
+          "DataType": "string",
+          "Required": true,
+          "Sensitivity": "personal",
+          "ResponseMode": "mask",
+          "ExtractionPatterns": [
+            "(?:NOME|CONDUTOR|RAZAO SOCIAL)\\s*[:]?\\s*([A-ZÁÉÍÓÚÂÊÔÃÕÇ][A-ZÁÉÍÓÚÂÊÔÃÕÇa-záéíóúâêôãõç ]{4,80})"
+          ]
+        },
+        {
+          "Code": "rntrcNumber",
+          "Name": "Número RNTRC",
+          "DataType": "string",
+          "Required": true,
+          "Sensitivity": "personal",
+          "ResponseMode": "mask",
+          "ExtractionPatterns": [
+            "RNTRC\\s*[:#]?\\s*([A-Z0-9.-]{5,})"
+          ]
+        },
+        {
+          "Code": "expirationDate",
+          "Name": "Data de validade",
+          "DataType": "date",
+          "Required": false,
+          "Sensitivity": "personal",
+          "ResponseMode": "show",
+          "ExtractionPatterns": [
+            "(?:VALIDADE|VENCIMENTO)\\s*[:]?\\s*(\\d{2}[/-]\\d{2}[/-]\\d{4})"
+          ]
+        }
+      ]
+    },
+    {
+      "Id": "training_certificate-catalog-v1",
+      "Code": "TRAINING_CERTIFICATE",
+      "Name": "Certificado de Treinamento",
+      "Description": "Tipo genérico para treinamento configurável.",
+      "Active": true,
+      "Version": "1.0",
+      "IdentificationPatterns": [
+        "CERTIFICADO|CERTIFICAMOS\\s+QUE"
+      ],
+      "Fields": [
+        {
+          "Code": "holderName",
+          "Name": "Nome do titular",
+          "DataType": "string",
+          "Required": true,
+          "Sensitivity": "personal",
+          "ResponseMode": "mask",
+          "ExtractionPatterns": [
+            "(?:NOME|CONDUTOR|RAZAO SOCIAL)\\s*[:]?\\s*([A-ZÁÉÍÓÚÂÊÔÃÕÇ][A-ZÁÉÍÓÚÂÊÔÃÕÇa-záéíóúâêôãõç ]{4,80})"
+          ]
+        },
+        {
+          "Code": "completionDate",
+          "Name": "Data de conclusão",
+          "DataType": "date",
+          "Required": false,
+          "Sensitivity": "personal",
+          "ResponseMode": "show",
+          "ExtractionPatterns": [
+            "(?:CONCLUSAO|FINALIZADO\\s+EM)\\s*[:]?\\s*(\\d{2}[/-]\\d{2}[/-]\\d{4})"
+          ]
+        },
+        {
+          "Code": "expirationDate",
+          "Name": "Data de validade",
+          "DataType": "date",
+          "Required": false,
+          "Sensitivity": "personal",
+          "ResponseMode": "show",
+          "ExtractionPatterns": [
+            "(?:VALIDADE|VENCIMENTO)\\s*[:]?\\s*(\\d{2}[/-]\\d{2}[/-]\\d{4})"
+          ]
+        }
+      ]
     }
   ],
   "Policies": [
     {
       "Id": "236e7b76b3f942ba90b63131347046e2",
       "Code": "CNH_DEFAULT",
-      "Name": "CNH padr\u00E3o",
-      "Description": "Equival\u00EAncia funcional \u00E0 valida\u00E7\u00E3o atual de CNH.",
+      "Name": "CNH padrão",
+      "Description": "Equivalência funcional à validação atual de CNH.",
       "DocumentType": "CNH",
       "Version": "1.0",
       "Active": true,
@@ -293,7 +558,7 @@
       "Id": "fce39761fce34876852d3b180cf45545",
       "Code": "CNH_TRANSPORTE_PRODUTO_PERIGOSO",
       "Name": "CNH para transporte de produto perigoso",
-      "Description": "Exemplo de pol\u00EDtica reutiliz\u00E1vel que requer categoria C, D ou E.",
+      "Description": "Exemplo de política reutilizável que requer categoria C, D ou E.",
       "DocumentType": "CNH",
       "Version": "1.0",
       "Active": true,
@@ -341,8 +606,8 @@
     {
       "Id": "e8dc15f092114854b0e4f02971449817",
       "Code": "ASO_DEFAULT",
-      "Name": "ASO padr\u00E3o",
-      "Description": "Equival\u00EAncia funcional \u00E0 valida\u00E7\u00E3o atual de ASO.",
+      "Name": "ASO padrão",
+      "Description": "Equivalência funcional à validação atual de ASO.",
       "DocumentType": "ASO",
       "Version": "1.0",
       "Active": true,
@@ -397,8 +662,8 @@
     {
       "Id": "85f02ff12a73417ea0263e534875ab0f",
       "Code": "DIRECAO_DEFENSIVA_DEFAULT",
-      "Name": "Dire\u00E7\u00E3o Defensiva padr\u00E3o",
-      "Description": "Equival\u00EAncia funcional \u00E0s regras atuais de treinamento homologado.",
+      "Name": "Direção Defensiva padrão",
+      "Description": "Equivalência funcional às regras atuais de treinamento homologado.",
       "DocumentType": "DIRECAO_DEFENSIVA",
       "Version": "1.0",
       "Active": true,
@@ -439,7 +704,7 @@
         },
         {
           "Code": "COURSE_HOURS",
-          "Name": "Carga hor\u00E1ria m\u00EDnima",
+          "Name": "Carga horária mínima",
           "RuleType": "minimum_by_reference",
           "Field": "courseHours",
           "ContextKey": null,
@@ -473,8 +738,8 @@
     {
       "Id": "b1269534951c4d08aaa23a5f1db5fa91",
       "Code": "CIPP_DEFAULT",
-      "Name": "CIPP padr\u00E3o",
-      "Description": "Exemplo de pol\u00EDtica configur\u00E1vel para certificado de inspe\u00E7\u00E3o.",
+      "Name": "CIPP padrão",
+      "Description": "Exemplo de política configurável para certificado de inspeção.",
       "DocumentType": "CIPP",
       "Version": "1.0",
       "Active": true,
@@ -509,6 +774,276 @@
           "Field": "plate",
           "ContextKey": "vehiclePlate",
           "Severity": "manual",
+          "UnknownOutcome": "manual_review",
+          "ExpectedValue": null,
+          "Parameters": null
+        }
+      ]
+    },
+    {
+      "Id": "mopp_default-catalog-v1",
+      "Code": "MOPP_DEFAULT",
+      "Name": "Mopp Default",
+      "Description": "Política inicial configurável; ajuste critérios de negócio antes de ativação operacional.",
+      "DocumentType": "MOPP",
+      "Version": "1.0",
+      "Active": true,
+      "MinimumConfidence": 0.5,
+      "Rules": [
+        {
+          "Code": "DOCUMENT_TYPE",
+          "Name": "Tipo identificado",
+          "RuleType": "document_type",
+          "Field": null,
+          "ContextKey": null,
+          "Severity": "reject",
+          "UnknownOutcome": "reject",
+          "ExpectedValue": "MOPP",
+          "Parameters": null
+        },
+        {
+          "Code": "HOLDERNAME",
+          "Name": "Campo identificado",
+          "RuleType": "exists",
+          "Field": "holderName",
+          "ContextKey": null,
+          "Severity": "manual",
+          "UnknownOutcome": "manual_review",
+          "ExpectedValue": null,
+          "Parameters": null
+        },
+        {
+          "Code": "EXPIRATION",
+          "Name": "Documento vigente",
+          "RuleType": "date_not_expired",
+          "Field": "expirationDate",
+          "ContextKey": null,
+          "Severity": "reject",
+          "UnknownOutcome": "manual_review",
+          "ExpectedValue": null,
+          "Parameters": null
+        }
+      ]
+    },
+    {
+      "Id": "crlv_default-catalog-v1",
+      "Code": "CRLV_DEFAULT",
+      "Name": "Crlv Default",
+      "Description": "Política inicial configurável; ajuste critérios de negócio antes de ativação operacional.",
+      "DocumentType": "CRLV",
+      "Version": "1.0",
+      "Active": true,
+      "MinimumConfidence": 0.5,
+      "Rules": [
+        {
+          "Code": "DOCUMENT_TYPE",
+          "Name": "Tipo identificado",
+          "RuleType": "document_type",
+          "Field": null,
+          "ContextKey": null,
+          "Severity": "reject",
+          "UnknownOutcome": "reject",
+          "ExpectedValue": "CRLV",
+          "Parameters": null
+        },
+        {
+          "Code": "PLATE",
+          "Name": "Campo identificado",
+          "RuleType": "exists",
+          "Field": "plate",
+          "ContextKey": null,
+          "Severity": "manual",
+          "UnknownOutcome": "manual_review",
+          "ExpectedValue": null,
+          "Parameters": null
+        },
+        {
+          "Code": "EXPIRATION",
+          "Name": "Documento vigente",
+          "RuleType": "date_not_expired",
+          "Field": "expirationDate",
+          "ContextKey": null,
+          "Severity": "reject",
+          "UnknownOutcome": "manual_review",
+          "ExpectedValue": null,
+          "Parameters": null
+        }
+      ]
+    },
+    {
+      "Id": "civ_default-catalog-v1",
+      "Code": "CIV_DEFAULT",
+      "Name": "Civ Default",
+      "Description": "Política inicial configurável; ajuste critérios de negócio antes de ativação operacional.",
+      "DocumentType": "CIV",
+      "Version": "1.0",
+      "Active": true,
+      "MinimumConfidence": 0.5,
+      "Rules": [
+        {
+          "Code": "DOCUMENT_TYPE",
+          "Name": "Tipo identificado",
+          "RuleType": "document_type",
+          "Field": null,
+          "ContextKey": null,
+          "Severity": "reject",
+          "UnknownOutcome": "reject",
+          "ExpectedValue": "CIV",
+          "Parameters": null
+        },
+        {
+          "Code": "PLATE",
+          "Name": "Campo identificado",
+          "RuleType": "exists",
+          "Field": "plate",
+          "ContextKey": null,
+          "Severity": "manual",
+          "UnknownOutcome": "manual_review",
+          "ExpectedValue": null,
+          "Parameters": null
+        },
+        {
+          "Code": "EXPIRATION",
+          "Name": "Documento vigente",
+          "RuleType": "date_not_expired",
+          "Field": "expirationDate",
+          "ContextKey": null,
+          "Severity": "reject",
+          "UnknownOutcome": "manual_review",
+          "ExpectedValue": null,
+          "Parameters": null
+        }
+      ]
+    },
+    {
+      "Id": "ctpp_default-catalog-v1",
+      "Code": "CTPP_DEFAULT",
+      "Name": "Ctpp Default",
+      "Description": "Política inicial configurável; ajuste critérios de negócio antes de ativação operacional.",
+      "DocumentType": "CTPP",
+      "Version": "1.0",
+      "Active": true,
+      "MinimumConfidence": 0.5,
+      "Rules": [
+        {
+          "Code": "DOCUMENT_TYPE",
+          "Name": "Tipo identificado",
+          "RuleType": "document_type",
+          "Field": null,
+          "ContextKey": null,
+          "Severity": "reject",
+          "UnknownOutcome": "reject",
+          "ExpectedValue": "CTPP",
+          "Parameters": null
+        },
+        {
+          "Code": "PLATE",
+          "Name": "Campo identificado",
+          "RuleType": "exists",
+          "Field": "plate",
+          "ContextKey": null,
+          "Severity": "manual",
+          "UnknownOutcome": "manual_review",
+          "ExpectedValue": null,
+          "Parameters": null
+        },
+        {
+          "Code": "EXPIRATION",
+          "Name": "Documento vigente",
+          "RuleType": "date_not_expired",
+          "Field": "expirationDate",
+          "ContextKey": null,
+          "Severity": "reject",
+          "UnknownOutcome": "manual_review",
+          "ExpectedValue": null,
+          "Parameters": null
+        }
+      ]
+    },
+    {
+      "Id": "rntrc_default-catalog-v1",
+      "Code": "RNTRC_DEFAULT",
+      "Name": "Rntrc Default",
+      "Description": "Política inicial configurável; ajuste critérios de negócio antes de ativação operacional.",
+      "DocumentType": "RNTRC",
+      "Version": "1.0",
+      "Active": true,
+      "MinimumConfidence": 0.5,
+      "Rules": [
+        {
+          "Code": "DOCUMENT_TYPE",
+          "Name": "Tipo identificado",
+          "RuleType": "document_type",
+          "Field": null,
+          "ContextKey": null,
+          "Severity": "reject",
+          "UnknownOutcome": "reject",
+          "ExpectedValue": "RNTRC",
+          "Parameters": null
+        },
+        {
+          "Code": "HOLDERNAME",
+          "Name": "Campo identificado",
+          "RuleType": "exists",
+          "Field": "holderName",
+          "ContextKey": null,
+          "Severity": "manual",
+          "UnknownOutcome": "manual_review",
+          "ExpectedValue": null,
+          "Parameters": null
+        },
+        {
+          "Code": "EXPIRATION",
+          "Name": "Documento vigente",
+          "RuleType": "date_not_expired",
+          "Field": "expirationDate",
+          "ContextKey": null,
+          "Severity": "reject",
+          "UnknownOutcome": "manual_review",
+          "ExpectedValue": null,
+          "Parameters": null
+        }
+      ]
+    },
+    {
+      "Id": "training_certificate_default-catalog-v1",
+      "Code": "TRAINING_CERTIFICATE_DEFAULT",
+      "Name": "Training Certificate Default",
+      "Description": "Política inicial configurável; ajuste critérios de negócio antes de ativação operacional.",
+      "DocumentType": "TRAINING_CERTIFICATE",
+      "Version": "1.0",
+      "Active": true,
+      "MinimumConfidence": 0.5,
+      "Rules": [
+        {
+          "Code": "DOCUMENT_TYPE",
+          "Name": "Tipo identificado",
+          "RuleType": "document_type",
+          "Field": null,
+          "ContextKey": null,
+          "Severity": "reject",
+          "UnknownOutcome": "reject",
+          "ExpectedValue": "TRAINING_CERTIFICATE",
+          "Parameters": null
+        },
+        {
+          "Code": "HOLDERNAME",
+          "Name": "Campo identificado",
+          "RuleType": "exists",
+          "Field": "holderName",
+          "ContextKey": null,
+          "Severity": "manual",
+          "UnknownOutcome": "manual_review",
+          "ExpectedValue": null,
+          "Parameters": null
+        },
+        {
+          "Code": "EXPIRATION",
+          "Name": "Documento vigente",
+          "RuleType": "date_not_expired",
+          "Field": "expirationDate",
+          "ContextKey": null,
+          "Severity": "reject",
           "UnknownOutcome": "manual_review",
           "ExpectedValue": null,
           "Parameters": null

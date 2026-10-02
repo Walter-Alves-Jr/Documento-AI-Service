@@ -21,6 +21,9 @@ DocumentValidation__Cors__AllowedOrigins__0=https://app.exemplo.com
 DocumentValidation__RateLimit__PermitLimit=30
 DocumentValidation__RateLimit__WindowSeconds=60
 DocumentValidation__Audit__RetentionDays=30
+ConnectionStrings__DocumentValidation=Host=<host>;Port=5432;Database=document_validation;Username=<user>;Password=<secret>
+Database__MigrateOnStartup=true
+DataProtection__KeysDirectory=/var/lib/document-validation/keys
 ```
 
 Use uma chave por consumidor e faça rotação. A chave `admin` deve ser exclusiva de automações/operadores de plataforma e não deve ser distribuída a consumidores.
@@ -52,11 +55,11 @@ curl -fsS http://localhost:8080/api/validation/health
 5. Posicione a API atrás de gateway/WAF quando houver exposição externa.
 6. Restrinja o endpoint administrativo à rede de operação ou gateway de administração, além do papel `admin`.
 
-> O filesystem do container pode ser efêmero. Nesta primeira etapa, o catálogo configurável é JSON e alterações administrativas precisam de volume persistente com backup ou, preferencialmente, de uma implementação de banco de dados antes de produção distribuída.
+> O serviço adota PostgreSQL 17 e EF Core/Npgsql para estado de compliance, validações, eventos e configuração de providers. O catálogo configurável permanece em JSON nesta etapa e precisa de volume persistente com backup ou futura migração para banco para governança distribuída.
 
 ## Persistência e retenção
 
-A implementação atual de auditoria e idempotência é em memória. Antes de múltiplas réplicas, restart seguro, busca histórica ou SLA de auditoria, substitua-a por serviços persistentes com:
+A implementação de compliance, histórico e idempotência persistida usa PostgreSQL. Antes de múltiplas réplicas, restart seguro, busca histórica ou SLA de auditoria, mantenha a operação com:
 
 - criptografia em repouso;
 - controle de acesso por tenant/cliente;

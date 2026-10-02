@@ -14,10 +14,15 @@ API .NET 8 para **extração documental via OCR local** e **validação por pol�
 - `score` das regras separado de `confidence` de OCR.
 - Respostas minimizadas: não retornam OCR bruto, imagem, Base64, CPF completo nem número completo de documento.
 - Autenticação por API key, papéis `validator`/`admin`, CORS restritivo, rate limiting, validação de assinatura de arquivo, correlation ID e auditoria mínima.
+- Persistência de compliance em **PostgreSQL 17** com EF Core/Npgsql, migrations, estado por entidade, cache por SHA-256, idempotência e histórico auditável.
+- Endpoints `POST /api/v1/validations`, `GET /api/v1/validations/{id}` e `GET /api/v1/compliance/{entityType}/{entityId}` para integração operacional sem reprocessamento em consulta.
+- Configuração administrativa persistida para provedores externos futuros, sem tokens hardcoded nem chamadas fictícias.
 
 ## Documentação
 
-A referência completa de arquitetura, API, regras, configuração, LGPD, segurança, execução, deploy e integração está em [DOCUMENT_VALIDATION_SERVICE.md](DOCUMENT_VALIDATION_SERVICE.md).
+A referência completa de arquitetura, API, regras, configuração, LGPD, segurança, execução e deploy está em [DOCUMENT_VALIDATION_SERVICE.md](DOCUMENT_VALIDATION_SERVICE.md).
+
+A arquitetura de PostgreSQL, tabelas, migrations, cache de conformidade, endpoints persistidos, renovação e configuração de provider está em [COMPLIANCE_PERSISTENCE.md](COMPLIANCE_PERSISTENCE.md).
 
 O diagnóstico do protótipo anterior e o plano de migração incremental estão em [ARQUITETURA_E_PLANO_MIGRACAO.md](ARQUITETURA_E_PLANO_MIGRACAO.md).
 
@@ -27,10 +32,15 @@ O diagnóstico do protótipo anterior e o plano de migração incremental estão
 sudo apt-get update
 sudo apt-get install -y tesseract-ocr tesseract-ocr-por tesseract-ocr-eng poppler-utils libgdiplus
 
+# Inicie PostgreSQL 17 (o compose é o caminho local recomendado).
+cp .env.example .env
+docker compose up -d postgres
+
 export DocumentValidation__Security__ApiKeys__0__Id=local-validator
 export DocumentValidation__Security__ApiKeys__0__Key='troque-por-uma-chave-local-longa'
 export DocumentValidation__Security__ApiKeys__0__Role=admin
 export DocumentValidation__Cors__AllowedOrigins__0=http://localhost:5000
+export ConnectionStrings__DocumentValidation='Host=localhost;Port=5435;Database=document_validation;Username=document_validation;Password=<POSTGRES_PASSWORD>'
 
 cd DocumentAIService
 dotnet restore

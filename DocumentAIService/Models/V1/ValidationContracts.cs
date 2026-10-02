@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace DocumentAIService.Models.V1;
 
-public sealed class ValidationV1Request
+public class ValidationV1Request
 {
     public string DocumentType { get; set; } = string.Empty;
     public string Policy { get; set; } = string.Empty;
@@ -11,7 +11,7 @@ public sealed class ValidationV1Request
     public string? IdempotencyKey { get; set; }
 }
 
-public sealed class ValidationV1Response
+public class ValidationV1Response
 {
     public string ValidationId { get; set; } = string.Empty;
     public ValidationDecisionStatus Status { get; set; }
@@ -30,6 +30,10 @@ public sealed class ValidationV1Response
     public DateTimeOffset CompletedAt { get; set; }
     public long ProcessingTimeMs { get; set; }
     public string CorrelationId { get; set; } = string.Empty;
+    public bool CacheUsed { get; set; }
+    public bool ExternalCall { get; set; }
+    public string? Provider { get; set; }
+    public decimal EstimatedCost { get; set; }
 }
 
 [JsonConverter(typeof(JsonStringEnumConverter))]

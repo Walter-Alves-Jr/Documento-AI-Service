@@ -33,6 +33,7 @@ Cobertura atual:
 | Privacidade | Nome/documento mascarados; campo redigido omitido. |
 | Extensibilidade | CIPP extraído por padrões configurados sem controller novo. |
 | Resiliência | Chave idempotente separada por cliente. |
+| Compliance persistido | Reuso por SHA-256, alteração de arquivo, estado por entidade, renovação elegível e inconsistência de placa. |
 
 ## Smoke tests HTTP
 
@@ -86,6 +87,12 @@ curl -sS http://localhost:5000/api/v1/admin/catalog/policies \
 ```
 
 **Esperado:** `200` apenas para chave com papel `admin`; `403` para chave validator.
+
+### Compliance persistido
+
+Com PostgreSQL disponível, envie uma requisição para `POST /api/v1/validations` com `entityType`, `entityId`, `documentType`, política e arquivo. Repita com o mesmo arquivo: **esperado:** `cacheUsed: true` e mesmo `validationId`. Altere qualquer byte do arquivo: **esperado:** novo processamento e novo documento lógico.
+
+Consulte `GET /api/v1/compliance/{entityType}/{entityId}`: **esperado:** resposta de banco sem OCR ou chamada externa. Consulte [COMPLIANCE_PERSISTENCE.md](COMPLIANCE_PERSISTENCE.md) para exemplos completos.
 
 ## Regressão funcional manual
 

@@ -9,6 +9,8 @@ public sealed class DvsOptions
     public RateLimitOptions RateLimit { get; set; } = new();
     public CatalogOptions Catalog { get; set; } = new();
     public AuditOptions Audit { get; set; } = new();
+    public RenewalOptions Renewal { get; set; } = new();
+    public CrossValidationOptions CrossValidation { get; set; } = new();
 }
 
 public sealed class SecurityOptions
@@ -49,4 +51,16 @@ public sealed class CatalogOptions
 public sealed class AuditOptions
 {
     public int RetentionDays { get; set; } = 30;
+}
+
+public sealed class RenewalOptions
+{
+    public int LeadDays { get; set; } = 3;
+    public int ScanIntervalMinutes { get; set; } = 60;
+    public bool Enabled { get; set; }
+}
+
+public sealed class CrossValidationOptions
+{
+    public string InconsistencyOutcome { get; set; } = "pending_validation";
 }
