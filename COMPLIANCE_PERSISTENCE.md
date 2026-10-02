@@ -59,11 +59,11 @@ Histórico de cada processamento que efetivamente ocorreu:
 
 - identificador público `validation_id`;
 - política/`validation_type`, status, score e confidence;
-- hash da resposta e snapshot minimizado cifrado;
+- hash da requisição, hash da resposta e snapshot minimizado cifrado;
 - tempo de processamento, `cache_used`, `external_call`, provider e custo estimado;
 - cliente, `idempotency_key` e correlation ID.
 
-Há unicidade por `(client_id, idempotency_key)` e `(client_id, validation_id)`.
+Há unicidade por `(client_id, idempotency_key)` e `(client_id, validation_id)`. A mesma chave de idempotência só pode retornar o resultado anterior quando o hash canônico da requisição — entidade, tipo, política, contexto e arquivo — também for idêntico; reutilização para payload diferente é recusada.
 
 ### `external_validations`
 
@@ -88,7 +88,7 @@ API administrativa persistida para tela futura. Guarda somente configuração n�
 - referência de segredo (`secretReference`), nunca token/senha/chave;
 - timeout, TTL, custo estimado e estado ativo.
 
-Headers com `Authorization`, `token` ou `api-key` são recusados. Credenciais devem permanecer em secret manager/variáveis de ambiente e ser apontadas por `secretReference`.
+Headers e parâmetros com identificadores de credencial (`Authorization`, `token`, `api-key`, `secret`, `password`, `credential` ou `key`) são recusados. Credenciais devem permanecer em secret manager/variáveis de ambiente e ser apontadas por `secretReference`.
 
 ## Fluxo de validação persistida
 
@@ -266,7 +266,7 @@ Além de CNH, ASO, Direção Defensiva e CIPP, o catálogo inicial inclui MOPP, 
 - Não são persistidos arquivo, Base64 ou OCR bruto.
 - Hash SHA-256 identifica o arquivo sem armazenar seu conteúdo.
 - Snapshots minimizados e campos pessoais persistidos são protegidos por Data Protection.
-- Defina `DataProtection:KeysDirectory` em volume persistente ou use um repositório de chaves centralizado adequado ao ambiente. Sem chave persistente, dados cifrados se tornam inacessíveis após restart.
+- Defina `DataProtection:KeysDirectory` em volume persistente ou use um repositório de chaves centralizado adequado ao ambiente. Fora de `Development`, a aplicação não inicia sem essa configuração, evitando cifragem efêmera inacessível após restart.
 - `clientId` da API Key segmenta entidades, validações e consultas.
 - As respostas continuam minimizadas/mascaradas; dados decifrados não são retornados pelo endpoint de compliance.
 - ASO demanda governança LGPD adicional, incluindo base legal, retenção, revisão humana e controle de acesso.

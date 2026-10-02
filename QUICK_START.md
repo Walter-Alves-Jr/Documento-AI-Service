@@ -40,6 +40,8 @@ export DocumentValidation__Security__ApiKeys__0__Role=admin
 export DocumentValidation__Cors__AllowedOrigins__0=http://localhost:5000
 export ConnectionStrings__DocumentValidation='Host=localhost;Port=5435;Database=document_validation;Username=document_validation;Password=<POSTGRES_PASSWORD>'
 export DOCUMENT_VALIDATION_API_KEY="$DocumentValidation__Security__ApiKeys__0__Key"
+export ASPNETCORE_ENVIRONMENT=Development
+export DOTNET_ENVIRONMENT=Development
 
 cd DocumentAIService
 dotnet restore

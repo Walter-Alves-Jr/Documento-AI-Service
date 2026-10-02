@@ -31,7 +31,7 @@ internal sealed class ComplianceDocumentConfiguration : IEntityTypeConfiguration
         builder.Property(x => x.DocumentNumber).HasMaxLength(1024);
         builder.Property(x => x.ExtractedDataSnapshot).HasMaxLength(16384);
         builder.Property(x => x.Status).HasConversion<string>().HasMaxLength(32).IsRequired();
-        builder.HasIndex(x => new { x.EntityId, x.DocumentType, x.FileHash });
+        builder.HasIndex(x => new { x.EntityId, x.DocumentType, x.FileHash }).IsUnique();
         builder.HasIndex(x => new { x.Status, x.NextValidationAt });
         builder.HasOne(x => x.Entity).WithMany(x => x.Documents).HasForeignKey(x => x.EntityId).OnDelete(DeleteBehavior.Cascade);
     }
@@ -44,6 +44,7 @@ internal sealed class DocumentValidationRecordConfiguration : IEntityTypeConfigu
         builder.ToTable("document_validations");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.ValidationId).HasMaxLength(40).IsRequired();
+        builder.Property(x => x.RequestHash).HasMaxLength(64).IsRequired();
         builder.Property(x => x.ValidationType).HasMaxLength(128).IsRequired();
         builder.Property(x => x.Status).HasConversion<string>().HasMaxLength(32).IsRequired();
         builder.Property(x => x.Source).HasMaxLength(80).IsRequired();
@@ -90,7 +91,9 @@ internal sealed class ValidationEventConfiguration : IEntityTypeConfiguration<Va
         builder.Property(x => x.ReasonCode).HasMaxLength(100);
         builder.Property(x => x.CorrelationId).HasMaxLength(128).IsRequired();
         builder.HasIndex(x => new { x.EntityId, x.CreatedAt });
-        builder.HasOne<ComplianceDocument>().WithMany(x => x.Events).HasForeignKey(x => x.DocumentId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne(x => x.Entity).WithMany(x => x.Events).HasForeignKey(x => x.EntityId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne(x => x.Document).WithMany(x => x.Events).HasForeignKey(x => x.DocumentId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne(x => x.DocumentValidationRecord).WithMany(x => x.Events).HasForeignKey(x => x.DocumentValidationRecordId).OnDelete(DeleteBehavior.SetNull);
     }
 }
 

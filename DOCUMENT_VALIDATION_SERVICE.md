@@ -316,6 +316,8 @@ export DocumentValidation__Security__ApiKeys__0__Key='troque-por-uma-chave-local
 export DocumentValidation__Security__ApiKeys__0__Role=admin
 export DocumentValidation__Cors__AllowedOrigins__0=http://localhost:5000
 export ConnectionStrings__DocumentValidation='Host=localhost;Port=5435;Database=document_validation;Username=document_validation;Password=<POSTGRES_PASSWORD>'
+export ASPNETCORE_ENVIRONMENT=Development
+export DOTNET_ENVIRONMENT=Development
 ```
 
 Antes de iniciar, disponibilize PostgreSQL 17. O compose da raiz segue o padrão do ecossistema:

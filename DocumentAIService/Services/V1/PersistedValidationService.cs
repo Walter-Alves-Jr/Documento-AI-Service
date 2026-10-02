@@ -36,6 +36,9 @@ public sealed class PersistedValidationService(
         if (string.IsNullOrWhiteSpace(request.EntityId))
             throw new ValidationInputException("ENTITY_ID_REQUIRED", "entityId é obrigatório para validação persistida.");
 
+        var now = DateTimeOffset.UtcNow;
+        var fileHash = Hash(fileData);
+        var requestHash = BuildRequestHash(request, fileHash);
         if (!string.IsNullOrWhiteSpace(request.IdempotencyKey))
         {
             var idempotent = await db.DocumentValidations.AsNoTracking()
@@ -43,6 +46,9 @@ public sealed class PersistedValidationService(
                 .FirstOrDefaultAsync(x => x.ClientId == clientId && x.IdempotencyKey == request.IdempotencyKey, cancellationToken);
             if (idempotent is not null)
             {
+                if (!CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(idempotent.RequestHash), Encoding.UTF8.GetBytes(requestHash)))
+                    throw new ValidationInputException("IDEMPOTENCY_KEY_REUSED", "A idempotencyKey já foi usada para uma requisição diferente.");
+
                 var cached = RestoreResponse(idempotent);
                 if (cached is not null)
                 {
@@ -54,7 +60,6 @@ public sealed class PersistedValidationService(
             }
         }
 
-        var now = DateTimeOffset.UtcNow;
         var entity = await db.Entities
             .Include(x => x.Documents)
             .FirstOrDefaultAsync(x => x.ClientId == clientId && x.Type == request.EntityType && x.ExternalId == request.EntityId, cancellationToken);
@@ -80,7 +85,6 @@ public sealed class PersistedValidationService(
             entity.UpdatedAt = now;
         }
 
-        var fileHash = Hash(fileData);
         var cacheCandidate = entity.Documents.FirstOrDefault(x => x.DocumentType.Equals(request.DocumentType, StringComparison.OrdinalIgnoreCase) && x.FileHash == fileHash);
         if (cacheCandidate is not null && IsDocumentCurrent(cacheCandidate, now))
         {
@@ -119,6 +123,7 @@ public sealed class PersistedValidationService(
         var internalResult = await validationService.ValidateAsync(baseRequest, fileData, mediaType, clientId, correlationId, cancellationToken);
 
         var existingDocument = cacheCandidate;
+        var previousStatus = existingDocument?.Status;
         var document = existingDocument ?? new ComplianceDocument
         {
             Entity = entity,
@@ -161,6 +166,7 @@ public sealed class PersistedValidationService(
         var record = new DocumentValidationRecord
         {
             ValidationId = response.ValidationId,
+            RequestHash = requestHash,
             Document = document,
             ValidationType = response.Policy,
             Status = complianceStatus,
@@ -188,14 +194,32 @@ public sealed class PersistedValidationService(
             DocumentId = document.Id,
             DocumentValidationRecordId = record.Id,
             EventType = "DOCUMENT_VALIDATED",
-            PreviousStatus = existingDocument?.Status,
+            PreviousStatus = previousStatus,
             CurrentStatus = complianceStatus,
             ReasonCode = reasonCode,
             CorrelationId = correlationId,
             CreatedAt = now
         });
 
-        await db.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException)
+        {
+            // Índices únicos protegem contra duas réplicas processando a mesma requisição ou hash.
+            // Após conflito, recarrega exclusivamente o registro do mesmo tenant e retorna o vencedor.
+            db.ChangeTracker.Clear();
+            var concurrent = await ResolveConcurrentResultAsync(request, clientId, requestHash, fileHash, now, cancellationToken);
+            if (concurrent is not null)
+            {
+                concurrent.CacheUsed = true;
+                concurrent.ProcessingTimeMs = 0;
+                logger.LogInformation("Resultado concorrente persistido retornado. ValidationId: {ValidationId}; Client: {Client}", concurrent.ValidationId, clientId);
+                return concurrent;
+            }
+            throw;
+        }
         logger.LogInformation("Compliance persistido. ValidationId: {ValidationId}; Entity: {EntityId}; Document: {DocumentId}; Status: {Status}; CacheUsed: false; ExternalCall: {ExternalCall}", response.ValidationId, entity.Id, document.Id, complianceStatus, response.ExternalCall);
         return response;
     }
@@ -271,7 +295,7 @@ public sealed class PersistedValidationService(
         var now = DateTimeOffset.UtcNow;
         var threshold = now.AddDays(Math.Max(0, options.Value.Renewal.LeadDays));
         var documents = await db.Documents
-            .Where(x => x.NextValidationAt != null && x.NextValidationAt <= threshold && x.Status != ComplianceStatus.REJECTED)
+            .Where(x => x.NextValidationAt != null && x.NextValidationAt <= threshold && x.Status == ComplianceStatus.APPROVED)
             .ToListAsync(cancellationToken);
         foreach (var document in documents)
         {
@@ -415,9 +439,61 @@ public sealed class PersistedValidationService(
         catch (JsonException) { return null; }
     }
 
+    private async Task<PersistedValidationResponse?> ResolveConcurrentResultAsync(PersistedValidationRequest request, string clientId, string requestHash, string fileHash, DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        if (!string.IsNullOrWhiteSpace(request.IdempotencyKey))
+        {
+            var idempotent = await db.DocumentValidations.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.ClientId == clientId && x.IdempotencyKey == request.IdempotencyKey, cancellationToken);
+            if (idempotent is not null)
+            {
+                if (!CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(idempotent.RequestHash), Encoding.UTF8.GetBytes(requestHash)))
+                    throw new ValidationInputException("IDEMPOTENCY_KEY_REUSED", "A idempotencyKey já foi usada para uma requisição diferente.");
+                return RestoreResponse(idempotent);
+            }
+        }
+
+        var entityId = await db.Entities.AsNoTracking()
+            .Where(x => x.ClientId == clientId && x.Type == request.EntityType && x.ExternalId == request.EntityId)
+            .Select(x => (Guid?)x.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (entityId is null) return null;
+
+        var document = await db.Documents.AsNoTracking()
+            .Where(x => x.EntityId == entityId && x.DocumentType.ToUpper() == request.DocumentType.ToUpper() && x.FileHash == fileHash)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (document is null || !IsDocumentCurrent(document, now)) return null;
+
+        var record = await db.DocumentValidations.AsNoTracking()
+            .Where(x => x.DocumentId == document.Id)
+            .OrderByDescending(x => x.ValidatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+        return record is null ? null : RestoreResponse(record);
+    }
+
     private static bool IsDocumentCurrent(ComplianceDocument document, DateTimeOffset now) =>
         (!document.DocumentExpiresAt.HasValue || document.DocumentExpiresAt >= now) &&
         (!document.NextValidationAt.HasValue || document.NextValidationAt > now);
+
+    private static string BuildRequestHash(PersistedValidationRequest request, string fileHash)
+    {
+        var builder = new StringBuilder();
+        Append(builder, request.EntityType.ToString());
+        Append(builder, request.EntityId.Trim());
+        Append(builder, request.DocumentType.Trim());
+        Append(builder, request.Policy.Trim());
+        Append(builder, request.Cpf?.Trim() ?? string.Empty);
+        Append(builder, request.Plate?.Trim() ?? string.Empty);
+        Append(builder, fileHash);
+        foreach (var item in request.Context.OrderBy(x => x.Key, StringComparer.OrdinalIgnoreCase))
+        {
+            Append(builder, item.Key);
+            Append(builder, item.Value ?? string.Empty);
+        }
+        return Hash(builder.ToString());
+    }
+
+    private static void Append(StringBuilder builder, string value) => builder.Append(value.Length).Append(':').Append(value).Append('|');
 
     private static ComplianceStatus ToComplianceStatus(ValidationDecisionStatus status) => status switch
     {

@@ -24,7 +24,10 @@ public sealed class ApiKeyAuthenticationHandler(
 
         var candidate = supplied.ToString();
         var configuredKey = dvsOptions.Value.Security.ApiKeys.FirstOrDefault(x =>
-            x.Active && FixedTimeEquals(x.Key, candidate));
+            x.Active &&
+            !string.IsNullOrWhiteSpace(x.Id) &&
+            !string.IsNullOrWhiteSpace(x.Key) &&
+            FixedTimeEquals(x.Key, candidate));
 
         if (configuredKey is null)
             return Task.FromResult(AuthenticateResult.Fail("Chave de API inválida."));

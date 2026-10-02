@@ -37,6 +37,12 @@ public sealed class PersistedValidationController(IFileInspector fileInspector, 
             var clientId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown";
             return Ok(await validationService.ValidateAsync(request, fileData, inspection.MediaType!, clientId, HttpContext.TraceIdentifier, cancellationToken));
         }
+        catch (ValidationInputException ex) when (ex.Code == "IDEMPOTENCY_KEY_REUSED")
+        {
+            var details = ProblemWithCode(ex.Message, ex.Code);
+            details.Status = StatusCodes.Status409Conflict;
+            return Conflict(details);
+        }
         catch (ValidationInputException ex) { return BadRequest(ProblemWithCode(ex.Message, ex.Code)); }
     }
 

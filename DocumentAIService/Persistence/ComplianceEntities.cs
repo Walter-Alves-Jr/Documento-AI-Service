@@ -39,6 +39,7 @@ public sealed class ComplianceEntity
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
     public List<ComplianceDocument> Documents { get; set; } = [];
+    public List<ValidationEvent> Events { get; set; } = [];
 }
 
 /// <summary>
@@ -73,6 +74,7 @@ public sealed class DocumentValidationRecord
 {
     public Guid Id { get; set; } = Guid.NewGuid();
     public string ValidationId { get; set; } = string.Empty;
+    public string RequestHash { get; set; } = string.Empty;
     public Guid DocumentId { get; set; }
     public ComplianceDocument Document { get; set; } = null!;
     public string ValidationType { get; set; } = string.Empty;
@@ -93,6 +95,7 @@ public sealed class DocumentValidationRecord
     public string? IdempotencyKey { get; set; }
     public string CorrelationId { get; set; } = string.Empty;
     public DateTimeOffset CreatedAt { get; set; }
+    public List<ValidationEvent> Events { get; set; } = [];
 }
 
 public sealed class ExternalValidationRecord
@@ -115,8 +118,11 @@ public sealed class ValidationEvent
 {
     public Guid Id { get; set; } = Guid.NewGuid();
     public Guid EntityId { get; set; }
+    public ComplianceEntity Entity { get; set; } = null!;
     public Guid DocumentId { get; set; }
+    public ComplianceDocument Document { get; set; } = null!;
     public Guid? DocumentValidationRecordId { get; set; }
+    public DocumentValidationRecord? DocumentValidationRecord { get; set; }
     public string EventType { get; set; } = string.Empty;
     public ComplianceStatus? PreviousStatus { get; set; }
     public ComplianceStatus CurrentStatus { get; set; }

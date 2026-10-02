@@ -27,7 +27,14 @@ builder.Services.AddProblemDetails();
 var dataProtection = builder.Services.AddDataProtection();
 var keysDirectory = builder.Configuration["DataProtection:KeysDirectory"];
 if (!string.IsNullOrWhiteSpace(keysDirectory))
+{
+    Directory.CreateDirectory(keysDirectory);
     dataProtection.PersistKeysToFileSystem(new DirectoryInfo(keysDirectory));
+}
+else if (!builder.Environment.IsDevelopment())
+{
+    throw new InvalidOperationException("DataProtection:KeysDirectory deve apontar para armazenamento persistente fora de Development.");
+}
 builder.Services.AddDocumentValidationPersistence(builder.Configuration);
 builder.Services.AddHealthChecks().AddDbContextCheck<DocumentValidationDbContext>("postgresql");
 

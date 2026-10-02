@@ -112,7 +112,7 @@ public sealed class PersistedValidationServiceTests
     }
 
     [Fact]
-    public async Task Idempotency_key_returns_original_validation_for_same_client()
+    public async Task Idempotency_key_returns_original_validation_for_same_request_and_client()
     {
         await using var db = CreateDb();
         var internalValidation = new FakeInternalValidationService();
@@ -121,11 +121,95 @@ public sealed class PersistedValidationServiceTests
         request.IdempotencyKey = "vehicle-006-request-1";
 
         var first = await service.ValidateAsync(request, [1], "image/png", "consumer-a", "corr-1", CancellationToken.None);
-        var second = await service.ValidateAsync(request, [2], "image/png", "consumer-a", "corr-2", CancellationToken.None);
+        var second = await service.ValidateAsync(request, [1], "image/png", "consumer-a", "corr-2", CancellationToken.None);
 
         Assert.True(second.CacheUsed);
         Assert.Equal(first.ValidationId, second.ValidationId);
         Assert.Equal(1, internalValidation.Calls);
+    }
+
+    [Fact]
+    public async Task Idempotency_key_reused_with_different_request_is_rejected()
+    {
+        await using var db = CreateDb();
+        var internalValidation = new FakeInternalValidationService();
+        var service = CreateService(db, internalValidation);
+        var request = Request("VEHICLE-007", ComplianceEntityType.VEHICLE, "CIPP", "CIPP_DEFAULT", "ABC-1D23");
+        request.IdempotencyKey = "vehicle-007-request-1";
+
+        await service.ValidateAsync(request, [1], "image/png", "consumer-a", "corr-1", CancellationToken.None);
+        var exception = await Assert.ThrowsAsync<ValidationInputException>(() => service.ValidateAsync(request, [2], "image/png", "consumer-a", "corr-2", CancellationToken.None));
+
+        Assert.Equal("IDEMPOTENCY_KEY_REUSED", exception.Code);
+        Assert.Equal(1, internalValidation.Calls);
+    }
+
+    [Fact]
+    public async Task Same_hash_for_different_entities_does_not_share_compliance()
+    {
+        await using var db = CreateDb();
+        var internalValidation = new FakeInternalValidationService();
+        var service = CreateService(db, internalValidation);
+
+        var first = await service.ValidateAsync(Request("VEHICLE-008-A", ComplianceEntityType.VEHICLE, "CIPP", "CIPP_DEFAULT", "ABC-1D23"), [1, 2, 3], "image/png", "consumer-a", "corr-1", CancellationToken.None);
+        var second = await service.ValidateAsync(Request("VEHICLE-008-B", ComplianceEntityType.VEHICLE, "CIPP", "CIPP_DEFAULT", "ABC-1D23"), [1, 2, 3], "image/png", "consumer-a", "corr-2", CancellationToken.None);
+
+        Assert.False(first.CacheUsed);
+        Assert.False(second.CacheUsed);
+        Assert.NotEqual(first.DocumentId, second.DocumentId);
+        Assert.Equal(2, internalValidation.Calls);
+    }
+
+    [Fact]
+    public async Task Client_cannot_read_other_client_compliance_or_validation()
+    {
+        await using var db = CreateDb();
+        var service = CreateService(db, new FakeInternalValidationService());
+        var created = await service.ValidateAsync(Request("DRIVER-002", ComplianceEntityType.DRIVER, "CNH", "CNH_DEFAULT", null), [4], "image/png", "consumer-a", "corr-1", CancellationToken.None);
+
+        var otherCompliance = await service.GetComplianceAsync(ComplianceEntityType.DRIVER, "DRIVER-002", "consumer-b", CancellationToken.None);
+        var otherValidation = await service.GetValidationAsync(created.ValidationId, "consumer-b", CancellationToken.None);
+
+        Assert.Null(otherCompliance);
+        Assert.Null(otherValidation);
+    }
+
+    [Fact]
+    public async Task Manual_review_is_persisted_as_pending_validation()
+    {
+        await using var db = CreateDb();
+        var service = CreateService(db, new FakeInternalValidationService(status: ValidationDecisionStatus.MANUAL_REVIEW));
+
+        var result = await service.ValidateAsync(Request("DRIVER-003", ComplianceEntityType.DRIVER, "CNH", "CNH_DEFAULT", null), [5], "image/png", "consumer-a", "corr-1", CancellationToken.None);
+
+        Assert.Equal(ComplianceStatus.PENDING_VALIDATION, result.ComplianceStatus);
+        Assert.Equal("MANUAL_REVIEW_REQUIRED", result.ComplianceReason);
+    }
+
+    [Fact]
+    public async Task Rejected_internal_validation_remains_rejected_when_provider_is_unavailable()
+    {
+        await using var db = CreateDb();
+        db.ExternalProviderConfigurations.Add(new ExternalProviderConfiguration
+        {
+            Code = "ANTT",
+            DocumentType = "CIPP",
+            Endpoint = "https://provider.example/validate",
+            HttpMethod = "GET",
+            AuthenticationType = "bearer",
+            SecretReference = "ANTT_CIPP_TOKEN",
+            TimeoutSeconds = 15,
+            TtlDays = 15,
+            Active = true,
+            CreatedAt = DateTimeOffset.UtcNow,
+            UpdatedAt = DateTimeOffset.UtcNow
+        });
+        await db.SaveChangesAsync();
+        var service = CreateService(db, new FakeInternalValidationService(status: ValidationDecisionStatus.REJECTED));
+
+        var result = await service.ValidateAsync(Request("VEHICLE-009", ComplianceEntityType.VEHICLE, "CIPP", "CIPP_DEFAULT", "ABC-1D23"), [6], "image/png", "consumer-a", "corr-1", CancellationToken.None);
+
+        Assert.Equal(ComplianceStatus.REJECTED, result.ComplianceStatus);
     }
 
     [Fact]
@@ -147,6 +231,8 @@ public sealed class PersistedValidationServiceTests
         Assert.Equal(ComplianceStatus.PENDING_VALIDATION, due.Status);
         Assert.Equal(ComplianceStatus.APPROVED, future.Status);
         Assert.Equal("EXTERNAL_VALIDATION_EXPIRED", await db.ValidationEvents.Select(x => x.ReasonCode).SingleAsync());
+
+        Assert.Equal(0, await service.MarkExternalValidationsDueAsync(CancellationToken.None));
     }
 
     private static PersistedValidationRequest Request(string entityId, ComplianceEntityType type, string documentType, string policy, string? plate) => new()
@@ -173,7 +259,7 @@ public sealed class PersistedValidationServiceTests
         return new PersistedValidationService(db, internalValidation, codec, Options.Create(settings ?? new DvsOptions()), NullLogger<PersistedValidationService>.Instance);
     }
 
-    private sealed class FakeInternalValidationService : IDocumentValidationV1Service
+    private sealed class FakeInternalValidationService(string expirationDate = "31/12/2030", ValidationDecisionStatus status = ValidationDecisionStatus.APPROVED) : IDocumentValidationV1Service
     {
         public int Calls { get; private set; }
 
@@ -182,7 +268,7 @@ public sealed class PersistedValidationServiceTests
             Calls++;
             var fields = new List<ExtractedFieldResponse>
             {
-                new() { Field = "expirationDate", Value = "31/12/2030", Confidence = 0.9 },
+                new() { Field = "expirationDate", Value = expirationDate, Confidence = 0.9 },
                 new() { Field = "holderName", Value = "T*** S***", Confidence = 0.9, Masked = true }
             };
             if (request.Context.TryGetValue("vehiclePlate", out var plate) && !string.IsNullOrWhiteSpace(plate))
@@ -192,7 +278,7 @@ public sealed class PersistedValidationServiceTests
             return Task.FromResult(new ValidationV1Response
             {
                 ValidationId = $"VAL-TEST-{Calls}",
-                Status = ValidationDecisionStatus.APPROVED,
+                Status = status,
                 Score = 100,
                 Confidence = 0.9,
                 DocumentType = request.DocumentType,
